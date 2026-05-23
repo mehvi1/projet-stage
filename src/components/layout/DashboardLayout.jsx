@@ -1,0 +1,193 @@
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import clsx from 'clsx'
+import {
+  BarChart3,
+  Bell,
+  FilePlus2,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  PanelLeftClose,
+  Search,
+  Settings,
+  Ticket,
+  X,
+} from 'lucide-react'
+import { motion } from 'framer-motion'
+import { ThemeSwitcher } from './ThemeSwitcher'
+import { BrandLogo } from '../ui/BrandLogo'
+import { useAuthStore } from '../../store/authStore'
+import { useTranslation } from '../../store/languageStore'
+import { initials } from '../../utils/formatters'
+
+const adminNav = [
+  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/admin/tickets', label: 'Ticket management', icon: Ticket },
+  { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+]
+
+function Sidebar({ area, collapsed, closeMobile }) {
+  const homePath = area === 'client' ? '/client' : '/admin'
+  const { t } = useTranslation()
+  const nav =
+    area === 'client'
+      ? [
+          { to: '/client', label: t.informationForm, icon: FilePlus2, end: true },
+          { to: '/client/settings', label: t.settings, icon: Settings },
+        ]
+      : adminNav
+
+  return (
+    <aside
+      className={clsx(
+        'flex h-full flex-col border-r border-slate-200 bg-white/92 p-3 backdrop-blur transition-[width] duration-200 dark:border-white/10 dark:bg-slate-950/90',
+        collapsed ? 'w-[76px]' : 'w-[280px]',
+      )}
+    >
+      <div className="flex h-20 items-center px-2">
+        {!collapsed ? (
+          <div>
+            <Link to={homePath} onClick={closeMobile} aria-label="Go to home dashboard">
+              <BrandLogo className="w-52 transition-opacity hover:opacity-80" />
+            </Link>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Support platform</p>
+          </div>
+        ) : (
+          <Link to={homePath} onClick={closeMobile} aria-label="Go to home dashboard">
+            <BrandLogo compact className="transition-opacity hover:opacity-80" />
+          </Link>
+        )}
+      </div>
+      {collapsed ? null : (
+        <div className="px-2">
+          <p className="sr-only">PBxcom support platform</p>
+        </div>
+      )}
+      <nav className="mt-6 space-y-1">
+        {nav.map(({ to, label, icon: Icon, end }, index) => (
+          <NavLink
+            key={`${to}-${label}`}
+            to={to}
+            end={end}
+            onClick={closeMobile}
+            className={({ isActive }) =>
+              clsx(
+                'group relative flex min-h-11 items-center gap-3 overflow-hidden rounded-lg px-3 text-sm font-semibold transition-all duration-150',
+                isActive
+                  ? 'bg-slate-950 text-white shadow-lg shadow-[#7fd22b]/20 ring-1 ring-[#7fd22b]/35 dark:bg-[#7fd22b] dark:text-slate-950'
+                  : 'text-slate-600 hover:bg-[#7fd22b]/12 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-[#7fd22b]/10 dark:hover:text-white',
+              )
+            }
+          >
+            <motion.span initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.04 }} className="flex items-center gap-3">
+              <Icon className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+              {!collapsed ? <span>{label}</span> : null}
+            </motion.span>
+          </NavLink>
+        ))}
+      </nav>
+      <motion.div
+        initial={{ opacity: 0.88 }}
+        animate={{ opacity: 1 }}
+        whileHover={{ y: -3 }}
+        className="mt-auto rounded-lg border border-[#7fd22b]/35 bg-[#7fd22b]/12 p-4 shadow-sm shadow-[#7fd22b]/10 dark:border-[#7fd22b]/25 dark:bg-[#7fd22b]/10"
+      >
+        {!collapsed ? (
+          <>
+            <p className="text-sm font-bold text-slate-950 dark:text-white">{area === 'client' ? t.supportTitle : 'SLA health'}</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">
+              {area === 'client' ? t.supportText : '97% of tickets handled inside target.'}
+            </p>
+          </>
+        ) : (
+          <Bell className="h-5 w-5 text-[#5aa90f] dark:text-[#9be65a]" />
+        )}
+      </motion.div>
+    </aside>
+  )
+}
+
+export function DashboardLayout({ area }) {
+  const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const user = useAuthStore((state) => state.user)
+  const logout = useAuthStore((state) => state.logout)
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
+
+  return (
+    <main className="pbx-animated-surface min-h-screen text-slate-950 dark:text-white">
+      <div className="fixed inset-y-0 left-0 z-40 hidden lg:block">
+        <Sidebar area={area} collapsed={collapsed} />
+      </div>
+      {mobileOpen ? (
+        <div className="fixed inset-0 z-50 bg-slate-950/45 lg:hidden">
+          <motion.div initial={{ x: -280 }} animate={{ x: 0 }} className="h-full">
+            <Sidebar area={area} collapsed={false} closeMobile={() => setMobileOpen(false)} />
+          </motion.div>
+        </div>
+      ) : null}
+      <section className={clsx('min-h-screen transition-[padding-left] duration-200', collapsed ? 'lg:pl-[76px]' : 'lg:pl-[280px]')}>
+        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/65 px-4 py-3 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/72 sm:px-6">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              aria-label="Open navigation"
+              className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5 lg:hidden"
+              onClick={() => setMobileOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              aria-label="Collapse navigation"
+              className="hidden h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5 lg:grid"
+              onClick={() => setCollapsed((value) => !value)}
+            >
+              {collapsed ? <Menu className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+            </button>
+            {area === 'admin' ? (
+              <div className="hidden min-w-0 flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400 md:flex">
+                <Search className="h-4 w-4" />
+                <span className="text-sm">Search tickets, clients, invoice numbers...</span>
+              </div>
+            ) : (
+              <div className="hidden flex-1 md:block" />
+            )}
+            <ThemeSwitcher />
+            <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-white/10 dark:bg-white/5">
+              <div className="grid h-8 w-8 place-items-center rounded-lg bg-[#7fd22b] text-xs font-black text-slate-950">
+                {initials(user?.name)}
+              </div>
+              <div className="hidden sm:block">
+                <p className="text-sm font-bold">{user?.name}</p>
+                <p className="text-xs capitalize text-slate-500 dark:text-slate-400">{user?.role}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              aria-label="Logout"
+              className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:text-rose-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
+            {mobileOpen ? (
+              <button aria-label="Close navigation" onClick={() => setMobileOpen(false)}>
+                <X />
+              </button>
+            ) : null}
+          </div>
+        </header>
+        <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
+          <Outlet />
+        </div>
+      </section>
+    </main>
+  )
+}
