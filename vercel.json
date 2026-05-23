@@ -2,11 +2,17 @@
   "experimentalServices": {
     "frontend": {
       "root": "frontend",
+      "framework": "vite",
+      "buildCommand": "npm run build",
+      "outputDirectory": "dist",
       "routePrefix": "/"
     },
     "backend": {
       "root": "backend",
+      "framework": "nodejs",
+      "buildCommand": "npm install",
+      "outputDirectory": "",
       "routePrefix": "api"
     }
   }
-}
+}   
