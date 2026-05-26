@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { Send } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
-import { Input } from '../../components/ui/Input'
+import { Input, Textarea } from '../../components/ui/Input'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { useAuthStore } from '../../store/authStore'
 import { useTranslation } from '../../store/languageStore'
@@ -19,6 +19,7 @@ const initialForm = {
   telephone: '',
   mail: '',
   ville: '',
+  problemDescription: '',
 }
 
 function validate(form, t) {
@@ -55,7 +56,7 @@ export function CreateTicket() {
     const ticket = createTicket(
       {
         subject: `Client information - ${form.societes}`,
-        description: `Client information submitted by ${form.prenom} ${form.nom} from ${form.societes}.`,
+        description: form.problemDescription,
         priority: 'Medium',
         client: {
           nom: form.nom,
@@ -89,6 +90,13 @@ export function CreateTicket() {
             <Input label={t.mail} type="email" value={form.mail} error={errors.mail} onChange={(event) => update('mail', event.target.value)} />
             <Input label={t.ville} value={form.ville} error={errors.ville} onChange={(event) => update('ville', event.target.value)} />
           </div>
+          <Textarea
+            label={t.problemDescription}
+            value={form.problemDescription}
+            error={errors.problemDescription}
+            onChange={(event) => update('problemDescription', event.target.value)}
+            placeholder={t.problemDescriptionPlaceholder}
+          />
           <div className="flex justify-end">
             <Button type="submit">
               <Send className="h-4 w-4" />
