@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, CheckCircle2, Printer, StickyNote } from 'lucide-react'
 import { Badge } from '../../components/ui/Badge'
@@ -10,6 +10,8 @@ import { Textarea } from '../../components/ui/Input'
 import { PrintableTicket } from '../../components/tickets/PrintableTicket'
 import { TicketTimeline } from '../../components/tickets/TicketTimeline'
 import { statusOptions } from '../../data/seedData'
+import { useAuthStore } from '../../store/authStore'
+import { useNotificationStore } from '../../store/notificationStore'
 import { useTicketStore } from '../../store/ticketStore'
 import { useToastStore } from '../../store/toastStore'
 import { formatDate } from '../../utils/formatters'
@@ -17,17 +19,43 @@ import { NotFound } from '../NotFound'
 
 export function AdminTicketDetail() {
   const { ticketId } = useParams()
+  const user = useAuthStore((state) => state.user)
   const ticket = useTicketStore((state) => state.getTicket(ticketId))
   const updateStatus = useTicketStore((state) => state.updateStatus)
+  const markTicketSeenByAdmin = useTicketStore((state) => state.markTicketSeenByAdmin)
   const addNote = useTicketStore((state) => state.addNote)
+  const sendEmailNotification = useNotificationStore((state) => state.sendEmailNotification)
   const pushToast = useToastStore((state) => state.pushToast)
   const [note, setNote] = useState('')
+
+  useEffect(() => {
+    if (!ticket || ticket.adminReadAt) return
+    const updatedTicket = markTicketSeenByAdmin(ticket.id, user.name)
+    if (!updatedTicket) return
+    sendEmailNotification({
+      recipientId: ticket.userId,
+      recipientEmail: ticket.client.mail,
+      recipientRole: 'client',
+      ticketId: ticket.id,
+      subject: `Your ticket ${ticket.id} was read`,
+      message: `${user.name} opened and read your ticket about: ${ticket.description}`,
+    })
+    pushToast(`Client email notification sent to ${ticket.client.mail}.`)
+  }, [markTicketSeenByAdmin, pushToast, sendEmailNotification, ticket, user.name])
 
   if (!ticket) return <NotFound />
 
   const handleStatus = (status) => {
     updateStatus(ticket.id, status)
-    pushToast(`Status updated to ${status}.`)
+    sendEmailNotification({
+      recipientId: ticket.userId,
+      recipientEmail: ticket.client.mail,
+      recipientRole: 'client',
+      ticketId: ticket.id,
+      subject: `Ticket ${ticket.id} status updated`,
+      message: `${user.name} changed your ticket status to ${status}.`,
+    })
+    pushToast(`Status updated to ${status}. Client email notification sent.`)
   }
 
   const saveNote = () => {

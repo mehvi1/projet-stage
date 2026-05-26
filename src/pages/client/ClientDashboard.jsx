@@ -1,5 +1,5 @@
-import { CreateTicket } from './CreateTicket'
+import { ClientTickets } from './ClientTickets'
 
 export function ClientDashboard() {
-  return <CreateTicket />
+  return <ClientTickets />
 }

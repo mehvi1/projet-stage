@@ -8,7 +8,7 @@ import { useAuthStore } from '../../store/authStore'
 import { useToastStore } from '../../store/toastStore'
 
 export function Login() {
-  const [form, setForm] = useState({ email: 'client@pbxcom.ma', password: 'client123' })
+  const [form, setForm] = useState({ email: '', password: '' })
   const login = useAuthStore((state) => state.login)
   const pushToast = useToastStore((state) => state.pushToast)
   const navigate = useNavigate()
@@ -33,7 +33,6 @@ export function Login() {
     >
       <p className="text-sm font-semibold text-cyan-600 dark:text-cyan-300">Secure access</p>
       <h1 className="mt-2 text-3xl font-black text-slate-950 dark:text-white">Sign in to PBxcom</h1>
-      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Demo: client@pbxcom.ma/client123 or admin@pbxcom.ma/admin123</p>
       <div className="mt-6 space-y-4">
         <Input label="Email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required />
         <Input label="Password" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required />

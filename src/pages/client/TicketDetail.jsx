@@ -5,15 +5,17 @@ import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { TicketTimeline } from '../../components/tickets/TicketTimeline'
+import { useAuthStore } from '../../store/authStore'
 import { useTicketStore } from '../../store/ticketStore'
 import { formatDate } from '../../utils/formatters'
 import { NotFound } from '../NotFound'
 
 export function TicketDetail() {
   const { ticketId } = useParams()
+  const user = useAuthStore((state) => state.user)
   const ticket = useTicketStore((state) => state.getTicket(ticketId))
 
-  if (!ticket) return <NotFound />
+  if (!ticket || ticket.userId !== user.id) return <NotFound />
 
   return (
     <div className="space-y-6">

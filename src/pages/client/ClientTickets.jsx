@@ -1,5 +1,7 @@
+import { Link } from 'react-router-dom'
 import { useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
+import { FilePlus2, Search } from 'lucide-react'
+import { Button } from '../../components/ui/Button'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Input } from '../../components/ui/Input'
 import { PageHeader } from '../../components/ui/PageHeader'
@@ -28,7 +30,12 @@ export function ClientTickets() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Ticket history" eyebrow="Client support" description="Search your previous requests and track status updates from PBxcom." />
+      <PageHeader
+        title="Ticket history"
+        eyebrow="Client support"
+        description="Search your previous requests and track status updates from PBxcom."
+        action={<Button as={Link} to="/client/new"><FilePlus2 className="h-4 w-4" /> Create new ticket</Button>}
+      />
       <div className="grid gap-3 md:grid-cols-[1fr_220px]">
         <Input label="Search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ticket ID or subject" />
         <Select label="Status" value={status} onChange={(event) => setStatus(event.target.value)}>

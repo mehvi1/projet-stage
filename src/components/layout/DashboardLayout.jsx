@@ -1,9 +1,10 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import clsx from 'clsx'
 import {
   BarChart3,
   Bell,
+  ClipboardList,
   FilePlus2,
   LayoutDashboard,
   LogOut,
@@ -19,7 +20,8 @@ import { ThemeSwitcher } from './ThemeSwitcher'
 import { BrandLogo } from '../ui/BrandLogo'
 import { useAuthStore } from '../../store/authStore'
 import { useTranslation } from '../../store/languageStore'
-import { initials } from '../../utils/formatters'
+import { useNotificationStore } from '../../store/notificationStore'
+import { formatDate, initials } from '../../utils/formatters'
 
 const adminNav = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -27,13 +29,123 @@ const adminNav = [
   { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
 ]
 
+function playNotificationSound() {
+  const AudioContext = window.AudioContext || window.webkitAudioContext
+  if (!AudioContext) return
+
+  const audio = new AudioContext()
+  const gain = audio.createGain()
+  gain.gain.setValueAtTime(0.001, audio.currentTime)
+  gain.gain.exponentialRampToValueAtTime(0.18, audio.currentTime + 0.02)
+  gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.45)
+  gain.connect(audio.destination)
+
+  ;[740, 980].forEach((frequency, index) => {
+    const oscillator = audio.createOscillator()
+    oscillator.type = 'sine'
+    oscillator.frequency.value = frequency
+    oscillator.connect(gain)
+    oscillator.start(audio.currentTime + index * 0.12)
+    oscillator.stop(audio.currentTime + index * 0.12 + 0.18)
+  })
+
+  setTimeout(() => audio.close(), 700)
+}
+
+function NotificationCenter({ area, user }) {
+  const [open, setOpen] = useState(false)
+  const navigate = useNavigate()
+  const notifications = useNotificationStore((state) => state.notifications)
+  const markReadForUser = useNotificationStore((state) => state.markReadForUser)
+  const previousUnreadRef = useRef(null)
+  const userNotifications = useMemo(
+    () => notifications.filter((notification) => notification.recipientId === user?.id),
+    [notifications, user?.id],
+  )
+  const unreadCount = userNotifications.filter((notification) => !notification.read).length
+
+  useEffect(() => {
+    if (previousUnreadRef.current === null) {
+      previousUnreadRef.current = unreadCount
+      return
+    }
+    if (unreadCount > previousUnreadRef.current) {
+      playNotificationSound()
+    }
+    previousUnreadRef.current = unreadCount
+  }, [unreadCount])
+
+  const openCenter = () => {
+    setOpen((value) => !value)
+    if (!open && unreadCount) markReadForUser(user.id)
+  }
+
+  const openTicket = (ticketId) => {
+    if (!ticketId) return
+    setOpen(false)
+    navigate(area === 'admin' ? `/admin/tickets/${ticketId}` : `/client/tickets/${ticketId}`)
+  }
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        aria-label="Open notifications"
+        className={clsx(
+          'relative grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-[#7fd22b]/60 hover:text-slate-950 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-white',
+          open ? 'border-[#7fd22b]/70 ring-4 ring-[#7fd22b]/15' : null,
+        )}
+        onClick={openCenter}
+      >
+        <Bell className="h-5 w-5" />
+        {unreadCount ? (
+          <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[#7fd22b] px-1 text-[10px] font-black text-slate-950">
+            {unreadCount}
+          </span>
+        ) : null}
+      </button>
+      {open ? (
+        <motion.div
+          initial={{ opacity: 0, y: 8, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          className="absolute right-0 top-12 z-50 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-slate-950"
+        >
+          <div className="border-b border-slate-100 px-4 py-3 dark:border-white/10">
+            <p className="text-sm font-black text-slate-950 dark:text-white">Notifications</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Email alerts received on this website</p>
+          </div>
+          <div className="max-h-96 overflow-y-auto">
+            {userNotifications.length ? (
+              userNotifications.slice(0, 12).map((notification) => (
+                <button
+                  key={notification.id}
+                  type="button"
+                  className="block w-full border-b border-slate-100 px-4 py-3 text-left transition hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/5"
+                  onClick={() => openTicket(notification.ticketId)}
+                >
+                  <span className="block text-sm font-bold text-slate-950 dark:text-white">{notification.subject}</span>
+                  <span className="mt-1 block text-sm text-slate-600 dark:text-slate-300">{notification.message}</span>
+                  <span className="mt-2 block text-xs text-slate-400">{formatDate(notification.createdAt)}</span>
+                </button>
+              ))
+            ) : (
+              <p className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">No notifications yet.</p>
+            )}
+          </div>
+        </motion.div>
+      ) : null}
+    </div>
+  )
+}
+
 function Sidebar({ area, collapsed, closeMobile }) {
   const homePath = area === 'client' ? '/client' : '/admin'
   const { t } = useTranslation()
   const nav =
     area === 'client'
       ? [
-          { to: '/client', label: t.informationForm, icon: FilePlus2, end: true },
+          { to: '/client', label: t.ticketHistory, icon: ClipboardList, end: true },
+          { to: '/client/new', label: t.newTicket, icon: FilePlus2 },
           { to: '/client/settings', label: t.settings, icon: Settings },
         ]
       : adminNav
@@ -160,6 +272,7 @@ export function DashboardLayout({ area }) {
               <div className="hidden flex-1 md:block" />
             )}
             <ThemeSwitcher />
+            <NotificationCenter area={area} user={user} />
             <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-white/10 dark:bg-white/5">
               <div className="grid h-8 w-8 place-items-center rounded-lg bg-[#7fd22b] text-xs font-black text-slate-950">
                 {initials(user?.name)}
