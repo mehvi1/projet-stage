@@ -5,7 +5,7 @@ export const users = [
     id: 'u-admin-001',
     name: 'PBxcom',
     email: 'info@pbxcom.fr',
-    password: 'admin123',
+    password: 'Pbxcom123',
     role: 'admin',
     company: 'PBxcom',
   },
