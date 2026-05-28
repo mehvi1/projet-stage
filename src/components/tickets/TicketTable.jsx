@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom'
 import { Badge } from '../ui/Badge'
 import { formatDate } from '../../utils/formatters'
+import { sortTicketsByNumber } from '../../utils/tickets'
 
 export function TicketTable({ tickets, basePath }) {
+  const orderedTickets = sortTicketsByNumber(tickets)
+
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-white/10 dark:bg-slate-900/70">
       <div className="overflow-x-auto">
@@ -19,7 +22,7 @@ export function TicketTable({ tickets, basePath }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-white/10">
-            {tickets.map((ticket) => (
+            {orderedTickets.map((ticket) => (
               <tr key={ticket.id} className="transition hover:bg-slate-50 dark:hover:bg-white/5">
                 <td className="px-4 py-4">
                   <p className="font-black text-slate-950 dark:text-white">{ticket.id}</p>

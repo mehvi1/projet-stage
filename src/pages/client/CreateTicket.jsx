@@ -48,7 +48,9 @@ export function CreateTicket() {
   const user = useAuthStore((state) => state.user)
   const users = useAuthStore((state) => state.users)
   const allTickets = useTicketStore((state) => state.tickets)
-  const latestTicket = allTickets.find((ticket) => ticket.userId === user.id)
+  const latestTicket = allTickets
+    .filter((ticket) => ticket.userId === user.id)
+    .sort((first, second) => new Date(second.createdAt) - new Date(first.createdAt))[0]
   const [form, setForm] = useState(() => buildInitialForm(latestTicket))
   const [errors, setErrors] = useState({})
   const createTicket = useTicketStore((state) => state.createTicket)

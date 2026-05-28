@@ -1,14 +1,20 @@
 import { Ticket } from '../models/Ticket.js'
 
-function nextPublicId() {
-  return `PBX-${Math.floor(10000 + Math.random() * 90000)}`
+function formatTicketNumber(value) {
+  return String(value).padStart(5, '0')
+}
+
+async function nextPublicId() {
+  const latestTicket = await Ticket.findOne().sort({ publicId: -1 }).select('publicId')
+  const latestNumber = latestTicket ? Number.parseInt(latestTicket.publicId, 10) || 0 : 0
+  return formatTicketNumber(latestNumber + 1)
 }
 
 export async function createTicket(req, res, next) {
   try {
     const ticket = await Ticket.create({
       ...req.body,
-      publicId: nextPublicId(),
+      publicId: await nextPublicId(),
       user: req.user.id,
       history: [{ label: 'Ticket created', actor: req.user.name }],
     })
@@ -21,7 +27,7 @@ export async function createTicket(req, res, next) {
 export async function listTickets(req, res, next) {
   try {
     const query = req.user.role === 'client' ? { user: req.user.id } : {}
-    const tickets = await Ticket.find(query).sort({ createdAt: -1 }).populate('user', 'name email company')
+    const tickets = await Ticket.find(query).sort({ publicId: 1 }).populate('user', 'name email company')
     res.json(tickets)
   } catch (error) {
     next(error)

@@ -1,15 +1,17 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { tickets } from '../data/seedData'
+import { nextTicketNumber, sortTicketsByNumber } from '../utils/tickets'
 
 export const useTicketStore = create(
   persist(
     (set, get) => ({
       tickets,
       createTicket: (payload, userId) => {
-        const id = `PBX-${Math.floor(24000 + Math.random() * 9000)}`
+        const id = nextTicketNumber(get().tickets)
         const ticket = {
           id,
+          ticketNumber: id,
           userId,
           createdAt: new Date().toISOString(),
           status: 'Pending',
@@ -22,7 +24,7 @@ export const useTicketStore = create(
           history: [{ date: new Date().toISOString(), label: 'Ticket created', actor: 'Client' }],
           notes: [],
         }
-        set((state) => ({ tickets: [ticket, ...state.tickets] }))
+        set((state) => ({ tickets: sortTicketsByNumber([...state.tickets, ticket]) }))
         return ticket
       },
       updateStatus: (ticketId, status) =>

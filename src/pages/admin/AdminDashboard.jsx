@@ -5,6 +5,7 @@ import { Card } from '../../components/ui/Card'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { TicketTable } from '../../components/tickets/TicketTable'
 import { useTicketStore } from '../../store/ticketStore'
+import { sortTicketsByNumber } from '../../utils/tickets'
 
 function AnalyticsBar({ label, value, total, color }) {
   return (
@@ -22,6 +23,7 @@ function AnalyticsBar({ label, value, total, color }) {
 
 export function AdminDashboard() {
   const tickets = useTicketStore((state) => state.tickets)
+  const orderedTickets = sortTicketsByNumber(tickets)
   const total = tickets.length
   const pending = tickets.filter((ticket) => ticket.status === 'Pending').length
   const resolved = tickets.filter((ticket) => ticket.status === 'Resolved').length
@@ -81,7 +83,7 @@ export function AdminDashboard() {
           </div>
         </Card>
       </div>
-      <TicketTable tickets={tickets.slice(0, 5)} basePath="/admin/tickets" />
+      <TicketTable tickets={orderedTickets.slice(0, 5)} basePath="/admin/tickets" />
     </div>
   )
 }

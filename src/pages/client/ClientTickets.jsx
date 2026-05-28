@@ -10,6 +10,7 @@ import { TicketTable } from '../../components/tickets/TicketTable'
 import { statusOptions } from '../../data/seedData'
 import { useAuthStore } from '../../store/authStore'
 import { useTicketStore } from '../../store/ticketStore'
+import { sortTicketsByNumber } from '../../utils/tickets'
 
 export function ClientTickets() {
   const [query, setQuery] = useState('')
@@ -20,11 +21,13 @@ export function ClientTickets() {
 
   const filtered = useMemo(
     () =>
-      tickets.filter((ticket) => {
-        const matchesQuery = `${ticket.id} ${ticket.subject} ${ticket.description}`.toLowerCase().includes(query.toLowerCase())
-        const matchesStatus = status === 'All' || ticket.status === status
-        return matchesQuery && matchesStatus
-      }),
+      sortTicketsByNumber(
+        tickets.filter((ticket) => {
+          const matchesQuery = `${ticket.id} ${ticket.subject} ${ticket.description}`.toLowerCase().includes(query.toLowerCase())
+          const matchesStatus = status === 'All' || ticket.status === status
+          return matchesQuery && matchesStatus
+        }),
+      ),
     [query, status, tickets],
   )
 

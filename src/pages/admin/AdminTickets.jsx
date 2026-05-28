@@ -7,6 +7,7 @@ import { Select } from '../../components/ui/Select'
 import { TicketTable } from '../../components/tickets/TicketTable'
 import { statusOptions } from '../../data/seedData'
 import { useTicketStore } from '../../store/ticketStore'
+import { sortTicketsByNumber } from '../../utils/tickets'
 
 export function AdminTickets() {
   const [query, setQuery] = useState('')
@@ -15,12 +16,14 @@ export function AdminTickets() {
 
   const filtered = useMemo(
     () =>
-      tickets.filter((ticket) => {
-        const haystack = `${ticket.id} ${ticket.subject} ${ticket.description} ${ticket.client.societes} ${ticket.client.nFacture}`.toLowerCase()
-        const matchesQuery = haystack.includes(query.toLowerCase())
-        const matchesStatus = status === 'All' || ticket.status === status
-        return matchesQuery && matchesStatus
-      }),
+      sortTicketsByNumber(
+        tickets.filter((ticket) => {
+          const haystack = `${ticket.id} ${ticket.subject} ${ticket.description} ${ticket.client.societes} ${ticket.client.nFacture}`.toLowerCase()
+          const matchesQuery = haystack.includes(query.toLowerCase())
+          const matchesStatus = status === 'All' || ticket.status === status
+          return matchesQuery && matchesStatus
+        }),
+      ),
     [query, status, tickets],
   )
 
