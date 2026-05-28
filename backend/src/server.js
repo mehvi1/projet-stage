@@ -24,6 +24,11 @@ app.use(errorHandler)
 
 const port = process.env.PORT || 5000
 
-connectDatabase(process.env.MONGO_URI).then(() => {
-  app.listen(port, () => console.log(`PBxcom API running on port ${port}`))
-})
+connectDatabase(process.env.MONGO_URI)
+  .then(() => {
+    app.listen(port, () => console.log(`PBxcom API running on port ${port}`))
+  })
+  .catch((error) => {
+    console.error('Failed to start PBxcom API:', error.message)
+    process.exit(1)
+  })

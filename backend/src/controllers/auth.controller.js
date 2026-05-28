@@ -27,7 +27,7 @@ export async function login(req, res, next) {
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       return res.status(401).json({ message: 'Invalid credentials' })
     }
-    res.json({ token: signToken(user), user: { id: user.id, name: user.name, email, company: user.company, role: user.role } })
+    res.json({ token: signToken(user), user: { id: user.id, name: user.name, email: user.email, company: user.company, role: user.role } })
   } catch (error) {
     next(error)
   }

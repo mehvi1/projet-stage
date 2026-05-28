@@ -2,14 +2,27 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { users } from '../data/seedData'
 
+function mergeDefaultUsers(savedUsers = []) {
+  const defaultIds = new Set(users.map((user) => user.id))
+  const defaultEmails = new Set(users.map((user) => user.email.toLowerCase()))
+  const customUsers = savedUsers.filter(
+    (user) => !defaultIds.has(user.id) && !defaultEmails.has(user.email.toLowerCase()),
+  )
+  return [...users, ...customUsers]
+}
+
 export const useAuthStore = create(
   persist(
     (set, get) => ({
-      users,
+      users: mergeDefaultUsers(users),
       user: null,
       token: null,
       login: ({ email, password }) => {
-        const found = get().users.find(
+        const accounts = mergeDefaultUsers(get().users)
+        if (accounts.length !== get().users.length) {
+          set({ users: accounts })
+        }
+        const found = accounts.find(
           (user) => user.email.toLowerCase() === email.toLowerCase() && user.password === password,
         )
         if (!found) {
@@ -71,6 +84,13 @@ export const useAuthStore = create(
         set({ user: null, token: null })
       },
     }),
-    { name: 'pbxcom-auth' },
+    {
+      name: 'pbxcom-auth',
+      merge: (persistedState, currentState) => ({
+        ...currentState,
+        ...(persistedState?.state ?? persistedState),
+        users: mergeDefaultUsers(persistedState?.users ?? persistedState?.state?.users),
+      }),
+    },
   ),
 )
