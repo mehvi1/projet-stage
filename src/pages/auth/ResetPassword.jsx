@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { KeyRound } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
-import { Input } from '../../components/ui/Input'
+import { PasswordInput } from '../../components/ui/Input'
 import { api, apiMessage } from '../../services/api'
 import { useToastStore } from '../../store/toastStore'
 
@@ -32,7 +32,7 @@ export function ResetPassword() {
     >
       <p className="text-sm font-semibold text-cyan-600 dark:text-cyan-300">Account recovery</p>
       <h1 className="mt-2 text-3xl font-black text-slate-950 dark:text-white">Choose a new password</h1>
-      <Input className="mt-6" label="New password" type="password" minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} required />
+      <PasswordInput className="mt-6" label="New password" minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} required />
       <Button className="mt-6 w-full" type="submit" disabled={!token}>
         <KeyRound className="h-4 w-4" />
         Update password

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { RotateCcw, Save } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
-import { Input } from '../../components/ui/Input'
+import { Input, PasswordInput } from '../../components/ui/Input'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Select } from '../../components/ui/Select'
 import { useAuthStore } from '../../store/authStore'
@@ -83,9 +83,8 @@ export function ClientSettings() {
         <Card>
           <h2 className="text-lg font-black text-slate-950 dark:text-white">{t.passwordCard}</h2>
           <div className="mt-5 max-w-xl">
-            <Input
+            <PasswordInput
               label={t.newPassword}
-              type="password"
               value={form.password}
               error={errors.password}
               onChange={(event) => update('password', event.target.value)}

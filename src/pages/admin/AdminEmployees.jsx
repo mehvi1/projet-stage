@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { ShieldCheck, UserPlus } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
-import { Input } from '../../components/ui/Input'
+import { Input, PasswordInput } from '../../components/ui/Input'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Select } from '../../components/ui/Select'
 import { api, apiMessage } from '../../services/api'
@@ -64,7 +64,7 @@ export function AdminEmployees() {
           <Input label="Full name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required />
           <Input label="Email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required />
           <Input label="Company" value={form.company} onChange={(event) => setForm({ ...form, company: event.target.value })} required />
-          <Input label="Password" type="password" minLength={6} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required />
+          <PasswordInput label="Password" minLength={6} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required />
           <Select label="Role" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })}>
             <option value="employee">Employee</option>
             <option value="admin">Admin</option>

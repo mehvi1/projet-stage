@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { UserPlus } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
-import { Input } from '../../components/ui/Input'
+import { Input, PasswordInput } from '../../components/ui/Input'
 import { useAuthStore } from '../../store/authStore'
 import { useToastStore } from '../../store/toastStore'
 
@@ -37,7 +37,7 @@ export function Register() {
         <Input label="Full name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required />
         <Input label="Company" value={form.company} onChange={(event) => setForm({ ...form, company: event.target.value })} required />
         <Input label="Email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required />
-        <Input label="Password" type="password" minLength={6} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required />
+        <PasswordInput label="Password" minLength={6} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required />
       </div>
       <Button className="mt-6 w-full" type="submit">
         <UserPlus className="h-4 w-4" />

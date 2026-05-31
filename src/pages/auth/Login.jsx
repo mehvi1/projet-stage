@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { LogIn } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
-import { Input } from '../../components/ui/Input'
+import { Input, PasswordInput } from '../../components/ui/Input'
 import { useAuthStore } from '../../store/authStore'
 import { useToastStore } from '../../store/toastStore'
 
@@ -35,7 +35,7 @@ export function Login() {
       <h1 className="mt-2 text-3xl font-black text-slate-950 dark:text-white">Sign in to PBxcom</h1>
       <div className="mt-6 space-y-4">
         <Input label="Email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required />
-        <Input label="Password" type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required />
+        <PasswordInput label="Password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required />
       </div>
       <div className="mt-4 flex items-center justify-between text-sm">
         <Link to="/forgot-password" className="font-semibold text-cyan-700 dark:text-cyan-300">Forgot password?</Link>
