@@ -7,6 +7,7 @@ import { ToastHost } from '../components/ui/ToastHost'
 import { Login } from '../pages/auth/Login'
 import { Register } from '../pages/auth/Register'
 import { ForgotPassword } from '../pages/auth/ForgotPassword'
+import { ResetPassword } from '../pages/auth/ResetPassword'
 import { ClientDashboard } from '../pages/client/ClientDashboard'
 import { ClientTickets } from '../pages/client/ClientTickets'
 import { CreateTicket } from '../pages/client/CreateTicket'
@@ -14,6 +15,7 @@ import { ClientSettings } from '../pages/client/ClientSettings'
 import { TicketDetail } from '../pages/client/TicketDetail'
 import { AdminDashboard } from '../pages/admin/AdminDashboard'
 import { AdminAnalytics } from '../pages/admin/AdminAnalytics'
+import { AdminEmployees } from '../pages/admin/AdminEmployees'
 import { AdminTickets } from '../pages/admin/AdminTickets'
 import { AdminTicketDetail } from '../pages/admin/AdminTicketDetail'
 import { NotFound } from '../pages/NotFound'
@@ -33,6 +35,7 @@ export function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
           </Route>
 
           <Route
@@ -60,6 +63,7 @@ export function App() {
           >
             <Route index element={<AdminDashboard />} />
             <Route path="analytics" element={<AdminAnalytics />} />
+            <Route path="employees" element={<AdminEmployees />} />
             <Route path="tickets" element={<AdminTickets />} />
             <Route path="tickets/:ticketId" element={<AdminTicketDetail />} />
           </Route>

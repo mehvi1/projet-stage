@@ -13,10 +13,10 @@ export function Register() {
   const pushToast = useToastStore((state) => state.pushToast)
   const navigate = useNavigate()
 
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault()
     try {
-      register(form)
+      await register(form)
       pushToast('Your client workspace is ready.')
       navigate('/client')
     } catch (error) {

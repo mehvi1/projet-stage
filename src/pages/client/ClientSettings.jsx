@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Save } from 'lucide-react'
+import { RotateCcw, Save } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { Input } from '../../components/ui/Input'
@@ -13,6 +13,7 @@ import { useToastStore } from '../../store/toastStore'
 export function ClientSettings() {
   const user = useAuthStore((state) => state.user)
   const updateProfile = useAuthStore((state) => state.updateProfile)
+  const resetDemoData = useAuthStore((state) => state.resetDemoData)
   const language = useLanguageStore((state) => state.language)
   const setLanguage = useLanguageStore((state) => state.setLanguage)
   const pushToast = useToastStore((state) => state.pushToast)
@@ -31,7 +32,7 @@ export function ClientSettings() {
     setErrors((current) => ({ ...current, [key]: undefined }))
   }
 
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault()
     const nextErrors = {}
     if (!form.name.trim()) nextErrors.name = t.required
@@ -47,7 +48,7 @@ export function ClientSettings() {
     }
 
     try {
-      updateProfile({
+      await updateProfile({
         name: form.name,
         company: form.company,
         email: form.email,
@@ -59,6 +60,12 @@ export function ClientSettings() {
     } catch (error) {
       pushToast(error.message, 'error')
     }
+  }
+
+  const resetData = () => {
+    if (!window.confirm('Reset local demo data and return to login?')) return
+    resetDemoData()
+    window.location.assign('/login')
   }
 
   return (
@@ -97,6 +104,14 @@ export function ClientSettings() {
               ))}
             </Select>
           </div>
+        </Card>
+        <Card>
+          <h2 className="text-lg font-black text-slate-950 dark:text-white">Demo data</h2>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Clear local demo accounts, tickets, and notifications stored in this browser.</p>
+          <Button className="mt-4" variant="danger" onClick={resetData}>
+            <RotateCcw className="h-4 w-4" />
+            Reset local data
+          </Button>
         </Card>
         <div className="flex justify-end">
           <Button type="submit">

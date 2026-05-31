@@ -13,6 +13,7 @@ import {
   Search,
   Settings,
   Ticket,
+  Users,
   X,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -21,12 +22,14 @@ import { BrandLogo } from '../ui/BrandLogo'
 import { useAuthStore } from '../../store/authStore'
 import { useTranslation } from '../../store/languageStore'
 import { useNotificationStore } from '../../store/notificationStore'
+import { useTicketStore } from '../../store/ticketStore'
 import { formatDate, initials } from '../../utils/formatters'
 
 const adminNav = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/tickets', label: 'Ticket management', icon: Ticket },
   { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+  { to: '/admin/employees', label: 'Employees', icon: Users },
 ]
 
 function playNotificationSound() {
@@ -223,13 +226,25 @@ function Sidebar({ area, collapsed, closeMobile }) {
 export function DashboardLayout({ area }) {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [adminSearch, setAdminSearch] = useState('')
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
+  const loadTickets = useTicketStore((state) => state.loadTickets)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    loadTickets().catch(() => {})
+  }, [loadTickets])
 
   const handleLogout = () => {
     logout()
     navigate('/login')
+  }
+
+  const submitAdminSearch = (event) => {
+    event.preventDefault()
+    if (!adminSearch.trim()) return
+    navigate(`/admin/tickets?q=${encodeURIComponent(adminSearch.trim())}`)
   }
 
   return (
@@ -264,10 +279,15 @@ export function DashboardLayout({ area }) {
               {collapsed ? <Menu className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
             </button>
             {area === 'admin' ? (
-              <div className="hidden min-w-0 flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400 md:flex">
+              <form onSubmit={submitAdminSearch} className="hidden min-w-0 flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400 md:flex">
                 <Search className="h-4 w-4" />
-                <span className="text-sm">Search tickets, clients, invoice numbers...</span>
-              </div>
+                <input
+                  className="min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-500 dark:text-slate-100 dark:placeholder:text-slate-400"
+                  value={adminSearch}
+                  onChange={(event) => setAdminSearch(event.target.value)}
+                  placeholder="Search tickets, clients, invoice numbers..."
+                />
+              </form>
             ) : (
               <div className="hidden flex-1 md:block" />
             )}

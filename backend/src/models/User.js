@@ -7,6 +7,9 @@ const userSchema = new mongoose.Schema(
     passwordHash: { type: String, required: true },
     company: { type: String, trim: true },
     role: { type: String, enum: ['client', 'employee', 'admin'], default: 'client' },
+    active: { type: Boolean, default: true },
+    resetToken: { type: String },
+    resetTokenExpiresAt: { type: Date },
   },
   { timestamps: true },
 )

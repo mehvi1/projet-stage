@@ -1,24 +1,25 @@
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
-import { MailCheck } from 'lucide-react'
+import { KeyRound } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
-import { useAuthStore } from '../../store/authStore'
+import { api, apiMessage } from '../../services/api'
 import { useToastStore } from '../../store/toastStore'
 
-export function ForgotPassword() {
-  const [email, setEmail] = useState('')
-  const forgotPassword = useAuthStore((state) => state.forgotPassword)
+export function ResetPassword() {
+  const [searchParams] = useSearchParams()
+  const [password, setPassword] = useState('')
   const pushToast = useToastStore((state) => state.pushToast)
+  const token = searchParams.get('token') ?? ''
 
   const submit = async (event) => {
     event.preventDefault()
     try {
-      const message = await forgotPassword(email)
-      pushToast(message)
+      const { data } = await api.post('/auth/reset-password', { token, password })
+      pushToast(data.message)
     } catch (error) {
-      pushToast(error.message, 'error')
+      pushToast(apiMessage(error, 'Unable to reset password.'), 'error')
     }
   }
 
@@ -30,12 +31,11 @@ export function ForgotPassword() {
       className="w-full rounded-lg border border-slate-200 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-white/5"
     >
       <p className="text-sm font-semibold text-cyan-600 dark:text-cyan-300">Account recovery</p>
-      <h1 className="mt-2 text-3xl font-black text-slate-950 dark:text-white">Reset password</h1>
-      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Enter your email and PBxcom will send a secure recovery link.</p>
-      <Input className="mt-6" label="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
-      <Button className="mt-6 w-full" type="submit">
-        <MailCheck className="h-4 w-4" />
-        Send reset link
+      <h1 className="mt-2 text-3xl font-black text-slate-950 dark:text-white">Choose a new password</h1>
+      <Input className="mt-6" label="New password" type="password" minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} required />
+      <Button className="mt-6 w-full" type="submit" disabled={!token}>
+        <KeyRound className="h-4 w-4" />
+        Update password
       </Button>
       <Link to="/login" className="mt-4 block text-center text-sm font-semibold text-cyan-700 dark:text-cyan-300">Back to login</Link>
     </motion.form>

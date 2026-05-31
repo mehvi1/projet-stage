@@ -1,21 +1,52 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Paperclip, Send } from 'lucide-react'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
+import { Textarea } from '../../components/ui/Input'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { TicketTimeline } from '../../components/tickets/TicketTimeline'
+import { fileToAttachment } from '../../services/api'
 import { useAuthStore } from '../../store/authStore'
 import { useTicketStore } from '../../store/ticketStore'
+import { useToastStore } from '../../store/toastStore'
 import { formatDate } from '../../utils/formatters'
 import { NotFound } from '../NotFound'
 
 export function TicketDetail() {
   const { ticketId } = useParams()
+  const [message, setMessage] = useState('')
   const user = useAuthStore((state) => state.user)
   const ticket = useTicketStore((state) => state.getTicket(ticketId))
+  const addMessage = useTicketStore((state) => state.addMessage)
+  const addAttachment = useTicketStore((state) => state.addAttachment)
+  const pushToast = useToastStore((state) => state.pushToast)
 
   if (!ticket || ticket.userId !== user.id) return <NotFound />
+
+  const sendMessage = async () => {
+    if (!message.trim()) return
+    try {
+      await addMessage(ticket.id, message.trim(), user)
+      setMessage('')
+      pushToast('Message sent.')
+    } catch (error) {
+      pushToast(error.message, 'error')
+    }
+  }
+
+  const uploadAttachment = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    try {
+      await addAttachment(ticket.id, await fileToAttachment(file), user)
+      pushToast('Attachment added.')
+    } catch (error) {
+      pushToast(error.message, 'error')
+    }
+    event.target.value = ''
+  }
 
   return (
     <div className="space-y-6">
@@ -46,6 +77,40 @@ export function TicketDetail() {
         <Card>
           <h2 className="mb-5 text-lg font-black text-slate-950 dark:text-white">Status updates</h2>
           <TicketTimeline history={ticket.history} />
+        </Card>
+      </div>
+      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+        <Card>
+          <h2 className="text-lg font-black text-slate-950 dark:text-white">Conversation</h2>
+          <div className="mt-4 space-y-3">
+            {(ticket.messages ?? []).map((item, index) => (
+              <div key={`${item.createdAt}-${index}`} className="rounded-lg bg-slate-50 p-3 dark:bg-white/5">
+                <p className="text-sm font-bold text-slate-950 dark:text-white">{item.actor}</p>
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{item.body}</p>
+                <p className="mt-2 text-xs text-slate-400">{formatDate(item.createdAt)}</p>
+              </div>
+            ))}
+          </div>
+          <Textarea className="mt-4" label="Reply" value={message} onChange={(event) => setMessage(event.target.value)} />
+          <Button className="mt-3" onClick={sendMessage} disabled={ticket.status === 'Closed'}>
+            <Send className="h-4 w-4" />
+            Send reply
+          </Button>
+        </Card>
+        <Card>
+          <h2 className="text-lg font-black text-slate-950 dark:text-white">Attachments</h2>
+          <div className="mt-4 space-y-2">
+            {(ticket.attachments ?? []).length ? ticket.attachments.map((attachment, index) => (
+              <a key={`${attachment.name}-${index}`} href={attachment.dataUrl} download={attachment.name} className="block rounded-lg bg-slate-50 p-3 text-sm font-semibold text-cyan-700 dark:bg-white/5 dark:text-cyan-300">
+                {attachment.name}
+              </a>
+            )) : <p className="text-sm text-slate-500 dark:text-slate-400">No attachments yet.</p>}
+          </div>
+          <label className="mt-4 inline-flex cursor-pointer items-center gap-2 text-sm font-bold text-cyan-700 dark:text-cyan-300">
+            <Paperclip className="h-4 w-4" />
+            Add attachment
+            <input className="sr-only" type="file" onChange={uploadAttachment} />
+          </label>
         </Card>
       </div>
     </div>

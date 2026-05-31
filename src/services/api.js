@@ -12,3 +12,23 @@ api.interceptors.request.use((config) => {
   }
   return config
 })
+
+export function apiMessage(error, fallback = 'The server is not available.') {
+  return error?.response?.data?.message ?? error?.message ?? fallback
+}
+
+export async function fileToAttachment(file) {
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(new Error('Unable to read attachment.'))
+    reader.readAsDataURL(file)
+  })
+
+  return {
+    name: file.name,
+    type: file.type || 'application/octet-stream',
+    size: file.size,
+    dataUrl,
+  }
+}

@@ -9,6 +9,28 @@ const historySchema = new mongoose.Schema(
   { _id: false },
 )
 
+const attachmentSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    type: { type: String, default: 'application/octet-stream' },
+    size: { type: Number, default: 0 },
+    dataUrl: { type: String, required: true },
+    uploadedBy: { type: String, required: true },
+    uploadedAt: { type: Date, default: Date.now },
+  },
+  { _id: true },
+)
+
+const messageSchema = new mongoose.Schema(
+  {
+    body: { type: String, required: true, trim: true },
+    actor: { type: String, required: true },
+    actorRole: { type: String, enum: ['client', 'employee', 'admin'], required: true },
+    createdAt: { type: Date, default: Date.now },
+  },
+  { _id: true },
+)
+
 const clientSchema = new mongoose.Schema(
   {
     nom: { type: String, required: true },
@@ -38,6 +60,10 @@ const ticketSchema = new mongoose.Schema(
     client: { type: clientSchema, required: true },
     history: { type: [historySchema], default: [] },
     notes: { type: [String], default: [] },
+    messages: { type: [messageSchema], default: [] },
+    attachments: { type: [attachmentSchema], default: [] },
+    adminReadAt: { type: Date },
+    adminReadBy: { type: String },
   },
   { timestamps: true },
 )

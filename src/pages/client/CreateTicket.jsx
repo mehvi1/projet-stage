@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Send } from 'lucide-react'
+import { ArrowLeft, Paperclip, Send } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { Input, Textarea } from '../../components/ui/Input'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Select } from '../../components/ui/Select'
+import { fileToAttachment } from '../../services/api'
 import { getMoroccanCities } from '../../services/moroccanCities'
 import { useAuthStore } from '../../store/authStore'
 import { useTranslation } from '../../store/languageStore'
@@ -52,6 +53,7 @@ export function CreateTicket() {
     .filter((ticket) => ticket.userId === user.id)
     .sort((first, second) => new Date(second.createdAt) - new Date(first.createdAt))[0]
   const [form, setForm] = useState(() => buildInitialForm(latestTicket))
+  const [attachments, setAttachments] = useState([])
   const [errors, setErrors] = useState({})
   const createTicket = useTicketStore((state) => state.createTicket)
   const sendEmailNotification = useNotificationStore((state) => state.sendEmailNotification)
@@ -65,7 +67,14 @@ export function CreateTicket() {
     setErrors((current) => ({ ...current, [key]: undefined }))
   }
 
-  const submit = (event) => {
+  const attachFiles = async (event) => {
+    const files = Array.from(event.target.files ?? [])
+    const nextAttachments = await Promise.all(files.map(fileToAttachment))
+    setAttachments((current) => [...current, ...nextAttachments])
+    event.target.value = ''
+  }
+
+  const submit = async (event) => {
     event.preventDefault()
     const nextErrors = validate(form, t)
     setErrors(nextErrors)
@@ -73,39 +82,45 @@ export function CreateTicket() {
       pushToast(t.fixFields, 'error')
       return
     }
-    const ticket = createTicket(
-      {
-        subject: `Client information - ${form.societes}`,
-        description: form.problemDescription,
-        priority: 'Medium',
-        client: {
-          nom: form.nom,
-          prenom: form.prenom,
-          societes: form.societes,
-          nMarche: form.nMarche,
-          nFacture: form.nFacture,
-          telephone: form.telephone,
-          mail: form.mail,
-          ville: form.ville,
+    try {
+      const ticket = await createTicket(
+        {
+          subject: `Client information - ${form.societes}`,
+          description: form.problemDescription,
+          priority: 'Medium',
+          client: {
+            nom: form.nom,
+            prenom: form.prenom,
+            societes: form.societes,
+            nMarche: form.nMarche,
+            nFacture: form.nFacture,
+            telephone: form.telephone,
+            mail: form.mail,
+            ville: form.ville,
+          },
+          attachments,
         },
-      },
-      user.id,
-    )
-    users
-      .filter((account) => account.role === 'admin' || account.role === 'employee')
-      .forEach((admin) => {
-        sendEmailNotification({
-          recipientId: admin.id,
-          recipientEmail: admin.email,
-          recipientRole: admin.role,
-          ticketId: ticket.id,
-          subject: `New client ticket ${ticket.id}`,
-          message: `${user.name} sent a new problem ticket for ${form.societes}.`,
+        user.id,
+      )
+      users
+        .filter((account) => account.role === 'admin' || account.role === 'employee')
+        .forEach((admin) => {
+          sendEmailNotification({
+            recipientId: admin.id,
+            recipientEmail: admin.email,
+            recipientRole: admin.role,
+            ticketId: ticket.id,
+            subject: `New client ticket ${ticket.id}`,
+            message: `${user.name} sent a new problem ticket for ${form.societes}.`,
+          })
         })
-      })
-    setForm({ ...form, problemDescription: '' })
-    pushToast(`${t.sentInfo} ${t.reference} ${ticket.id}. Admin email notification sent.`)
-    navigate('/client')
+      setForm({ ...form, problemDescription: '' })
+      setAttachments([])
+      pushToast(`${t.sentInfo} ${t.reference} ${ticket.id}. Admin email notification sent.`)
+      navigate('/client')
+    } catch (error) {
+      pushToast(error.message, 'error')
+    }
   }
 
   return (
@@ -144,6 +159,22 @@ export function CreateTicket() {
             onChange={(event) => update('problemDescription', event.target.value)}
             placeholder={t.problemDescriptionPlaceholder}
           />
+          <div className="rounded-lg border border-dashed border-slate-300 p-4 dark:border-white/15">
+            <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-bold text-cyan-700 dark:text-cyan-300">
+              <Paperclip className="h-4 w-4" />
+              Add attachments
+              <input className="sr-only" type="file" multiple onChange={attachFiles} />
+            </label>
+            {attachments.length ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {attachments.map((attachment) => (
+                  <span key={`${attachment.name}-${attachment.size}`} className="rounded-lg bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-white/10 dark:text-slate-200">
+                    {attachment.name}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
           <div className="flex justify-end">
             <Button type="submit">
               <Send className="h-4 w-4" />

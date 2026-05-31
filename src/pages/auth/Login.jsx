@@ -13,10 +13,10 @@ export function Login() {
   const pushToast = useToastStore((state) => state.pushToast)
   const navigate = useNavigate()
 
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault()
     try {
-      const user = login(form)
+      const user = await login(form)
       pushToast(`Welcome back, ${user.name}.`)
       navigate(user.role === 'client' ? '/client' : '/admin')
     } catch (error) {

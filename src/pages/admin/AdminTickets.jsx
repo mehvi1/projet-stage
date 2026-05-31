@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { Input } from '../../components/ui/Input'
@@ -10,7 +11,9 @@ import { useTicketStore } from '../../store/ticketStore'
 import { sortTicketsByNumber } from '../../utils/tickets'
 
 export function AdminTickets() {
-  const [query, setQuery] = useState('')
+  const [searchParams] = useSearchParams()
+  const [typedQuery, setTypedQuery] = useState('')
+  const query = typedQuery || searchParams.get('q') || ''
   const [status, setStatus] = useState('All')
   const tickets = useTicketStore((state) => state.tickets)
 
@@ -31,7 +34,7 @@ export function AdminTickets() {
     <div className="space-y-6">
       <PageHeader title="Ticket management" eyebrow="Employee workspace" description="Search, filter, inspect, update, resolve, and print PBxcom support tickets." />
       <div className="grid gap-3 md:grid-cols-[1fr_220px]">
-        <Input label="Search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Client, ticket, facture..." />
+        <Input label="Search" value={query} onChange={(event) => setTypedQuery(event.target.value)} placeholder="Client, ticket, facture..." />
         <Select label="Status" value={status} onChange={(event) => setStatus(event.target.value)}>
           <option>All</option>
           {statusOptions.map((item) => <option key={item}>{item}</option>)}
