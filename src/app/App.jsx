@@ -8,6 +8,7 @@ import { Login } from '../pages/auth/Login'
 import { Register } from '../pages/auth/Register'
 import { ForgotPassword } from '../pages/auth/ForgotPassword'
 import { ClientDashboard } from '../pages/client/ClientDashboard'
+import { ClientTickets } from '../pages/client/ClientTickets'
 import { CreateTicket } from '../pages/client/CreateTicket'
 import { ClientSettings } from '../pages/client/ClientSettings'
 import { TicketDetail } from '../pages/client/TicketDetail'
@@ -43,6 +44,7 @@ export function App() {
             }
           >
             <Route index element={<ClientDashboard />} />
+            <Route path="tickets" element={<ClientTickets />} />
             <Route path="new" element={<CreateTicket />} />
             <Route path="settings" element={<ClientSettings />} />
             <Route path="tickets/:ticketId" element={<TicketDetail />} />
