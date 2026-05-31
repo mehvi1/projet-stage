@@ -1,4 +1,6 @@
 import { Ticket } from '../models/Ticket.js'
+import { User } from '../models/User.js'
+import { appUrl, sendEmail } from '../services/email.service.js'
 
 function formatTicketNumber(value) {
   return String(value).padStart(5, '0')
@@ -20,6 +22,17 @@ export async function createTicket(req, res, next) {
       messages: [{ body: req.body.description, actor: req.user.name, actorRole: req.user.role }],
       attachments: (req.body.attachments ?? []).map((attachment) => ({ ...attachment, uploadedBy: req.user.name })),
     })
+    const supportUsers = await User.find({ role: { $in: ['employee', 'admin'] }, active: true }).select('email name role')
+    await Promise.all(
+      supportUsers.map((supportUser) =>
+        sendEmail({
+          to: supportUser.email,
+          subject: `New PBxcom ticket ${ticket.publicId}`,
+          text: `${req.user.name} created ticket ${ticket.publicId}: ${ticket.description}\n\nOpen it: ${appUrl(`/admin/tickets/${ticket.publicId}`)}`,
+          html: `<p>${req.user.name} created ticket <strong>${ticket.publicId}</strong>.</p><p>${ticket.description}</p><p><a href="${appUrl(`/admin/tickets/${ticket.publicId}`)}">Open ticket</a></p>`,
+        }),
+      ),
+    )
     res.status(201).json(ticket)
   } catch (error) {
     next(error)
@@ -49,7 +62,13 @@ export async function updateTicketStatus(req, res, next) {
         $push: { history: { label: `Status changed to ${req.body.status}`, actor: req.user.name } },
       },
       { new: true },
-    )
+    ).populate('user', 'email name')
+    await sendEmail({
+      to: ticket.client.mail || ticket.user?.email,
+      subject: `Ticket ${ticket.publicId} status updated`,
+      text: `Your ticket ${ticket.publicId} status is now: ${ticket.status}.\n\nOpen it: ${appUrl(`/client/tickets/${ticket.publicId}`)}`,
+      html: `<p>Your ticket <strong>${ticket.publicId}</strong> status is now <strong>${ticket.status}</strong>.</p><p><a href="${appUrl(`/client/tickets/${ticket.publicId}`)}">Open ticket</a></p>`,
+    })
     res.json(ticket)
   } catch (error) {
     next(error)
@@ -67,7 +86,7 @@ export async function addInternalNote(req, res, next) {
 
 export async function markTicketSeen(req, res, next) {
   try {
-    const ticket = await Ticket.findById(req.params.id)
+    const ticket = await Ticket.findById(req.params.id).populate('user', 'email name')
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' })
 
     if (!ticket.adminReadAt) {
@@ -76,6 +95,12 @@ export async function markTicketSeen(req, res, next) {
       if (ticket.status === 'Pending') ticket.status = 'Seen'
       ticket.history.push({ label: 'Seen by support', actor: req.user.name })
       await ticket.save()
+      await sendEmail({
+        to: ticket.client.mail || ticket.user?.email,
+        subject: `Ticket ${ticket.publicId} was read`,
+        text: `${req.user.name} opened and read your ticket ${ticket.publicId}.\n\nOpen it: ${appUrl(`/client/tickets/${ticket.publicId}`)}`,
+        html: `<p>${req.user.name} opened and read your ticket <strong>${ticket.publicId}</strong>.</p><p><a href="${appUrl(`/client/tickets/${ticket.publicId}`)}">Open ticket</a></p>`,
+      })
     }
     res.json(ticket)
   } catch (error) {
@@ -85,7 +110,7 @@ export async function markTicketSeen(req, res, next) {
 
 export async function addMessage(req, res, next) {
   try {
-    const ticket = await Ticket.findById(req.params.id)
+    const ticket = await Ticket.findById(req.params.id).populate('user', 'email name')
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' })
     if (req.user.role === 'client' && String(ticket.user) !== req.user.id) {
       return res.status(403).json({ message: 'Forbidden' })
@@ -95,6 +120,22 @@ export async function addMessage(req, res, next) {
     ticket.messages.push({ body: req.body.body, actor: req.user.name, actorRole: req.user.role })
     ticket.history.push({ label: 'New message added', actor: req.user.name })
     await ticket.save()
+    const supportUsers = req.user.role === 'client'
+      ? await User.find({ role: { $in: ['employee', 'admin'] }, active: true }).select('email')
+      : []
+    const recipients = req.user.role === 'client'
+      ? supportUsers.map((user) => user.email)
+      : [ticket.client.mail || ticket.user?.email]
+    await Promise.all(
+      recipients.filter(Boolean).map((recipient) =>
+        sendEmail({
+          to: recipient,
+          subject: `New message on ticket ${ticket.publicId}`,
+          text: `${req.user.name} added a message:\n\n${req.body.body}\n\nOpen it: ${appUrl(req.user.role === 'client' ? `/admin/tickets/${ticket.publicId}` : `/client/tickets/${ticket.publicId}`)}`,
+          html: `<p>${req.user.name} added a message on ticket <strong>${ticket.publicId}</strong>.</p><p>${req.body.body}</p><p><a href="${appUrl(req.user.role === 'client' ? `/admin/tickets/${ticket.publicId}` : `/client/tickets/${ticket.publicId}`)}">Open ticket</a></p>`,
+        }),
+      ),
+    )
     res.json(ticket)
   } catch (error) {
     next(error)

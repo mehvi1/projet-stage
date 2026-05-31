@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs'
 import crypto from 'node:crypto'
 import jwt from 'jsonwebtoken'
 import { User } from '../models/User.js'
+import { appUrl, sendEmail } from '../services/email.service.js'
 
 function signToken(user) {
   return jwt.sign({ sub: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' })
@@ -73,7 +74,13 @@ export async function forgotPassword(req, res, next) {
       user.resetToken = crypto.randomBytes(24).toString('hex')
       user.resetTokenExpiresAt = new Date(Date.now() + 1000 * 60 * 30)
       await user.save()
-      console.log(`Password reset link for ${user.email}: /reset-password?token=${user.resetToken}`)
+      const resetLink = appUrl(`/reset-password?token=${user.resetToken}`)
+      await sendEmail({
+        to: user.email,
+        subject: 'PBxcom password reset',
+        text: `Use this link to reset your password: ${resetLink}`,
+        html: `<p>Use this link to reset your password:</p><p><a href="${resetLink}">${resetLink}</a></p>`,
+      })
     }
     res.json({ message: 'Password reset instructions sent if the account exists.' })
   } catch (error) {
