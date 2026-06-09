@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Paperclip, Send } from 'lucide-react'
 import { Badge } from '../../components/ui/Badge'
@@ -9,6 +9,7 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { TicketTimeline } from '../../components/tickets/TicketTimeline'
 import { fileToAttachment } from '../../services/api'
 import { useAuthStore } from '../../store/authStore'
+import { useNotificationStore } from '../../store/notificationStore'
 import { useTicketStore } from '../../store/ticketStore'
 import { useToastStore } from '../../store/toastStore'
 import { formatDate } from '../../utils/formatters'
@@ -18,10 +19,34 @@ export function TicketDetail() {
   const { ticketId } = useParams()
   const [message, setMessage] = useState('')
   const user = useAuthStore((state) => state.user)
+  const users = useAuthStore((state) => state.users)
   const ticket = useTicketStore((state) => state.getTicket(ticketId))
+  const markTicketReadByClient = useTicketStore((state) => state.markTicketReadByClient)
   const addMessage = useTicketStore((state) => state.addMessage)
   const addAttachment = useTicketStore((state) => state.addAttachment)
+  const sendEmailNotification = useNotificationStore((state) => state.sendEmailNotification)
   const pushToast = useToastStore((state) => state.pushToast)
+
+  useEffect(() => {
+    if (!ticket || ticket.userId !== user.id || ticket.clientReadAt) return
+    markTicketReadByClient(ticket.id, user.name)
+      .then((updatedTicket) => {
+        if (!updatedTicket) return
+        users
+          .filter((item) => ['admin', 'employee'].includes(item.role))
+          .forEach((admin) => {
+            sendEmailNotification({
+              recipientId: admin.id,
+              recipientEmail: admin.email,
+              recipientRole: admin.role,
+              ticketId: ticket.id,
+              subject: `Ticket ${ticket.id} was read by client`,
+              message: `${user.name} opened and read ticket ${ticket.id}.`,
+            })
+          })
+      })
+      .catch((error) => pushToast(error.message, 'error'))
+  }, [markTicketReadByClient, pushToast, sendEmailNotification, ticket, user.id, user.name, users])
 
   if (!ticket || ticket.userId !== user.id) return <NotFound />
 

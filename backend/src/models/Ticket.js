@@ -64,6 +64,8 @@ const ticketSchema = new mongoose.Schema(
     attachments: { type: [attachmentSchema], default: [] },
     adminReadAt: { type: Date },
     adminReadBy: { type: String },
+    clientReadAt: { type: Date },
+    clientReadBy: { type: String },
   },
   { timestamps: true },
 )

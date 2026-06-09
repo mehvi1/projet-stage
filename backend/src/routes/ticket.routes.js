@@ -4,6 +4,7 @@ import {
   addInternalNote,
   addMessage,
   createTicket,
+  markTicketReadByClient,
   listTickets,
   markTicketSeen,
   updateTicketStatus,
@@ -16,6 +17,7 @@ ticketRoutes.use(requireAuth)
 ticketRoutes.get('/', listTickets)
 ticketRoutes.post('/', createTicket)
 ticketRoutes.post('/:id/seen', requireRole('employee', 'admin'), markTicketSeen)
+ticketRoutes.post('/:id/client-read', requireRole('client'), markTicketReadByClient)
 ticketRoutes.post('/:id/messages', addMessage)
 ticketRoutes.post('/:id/attachments', addAttachment)
 ticketRoutes.patch('/:id/status', requireRole('employee', 'admin'), updateTicketStatus)

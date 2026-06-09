@@ -108,6 +108,38 @@ export async function markTicketSeen(req, res, next) {
   }
 }
 
+export async function markTicketReadByClient(req, res, next) {
+  try {
+    const ticket = await Ticket.findById(req.params.id).populate('user', 'email name')
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' })
+    if (String(ticket.user?._id ?? ticket.user) !== req.user.id) {
+      return res.status(403).json({ message: 'Forbidden' })
+    }
+
+    if (!ticket.clientReadAt) {
+      ticket.clientReadAt = new Date()
+      ticket.clientReadBy = req.user.name
+      ticket.history.push({ label: 'Seen by client', actor: req.user.name })
+      await ticket.save()
+
+      const supportUsers = await User.find({ role: { $in: ['employee', 'admin'] }, active: true }).select('email')
+      await Promise.all(
+        supportUsers.map((supportUser) =>
+          sendEmail({
+            to: supportUser.email,
+            subject: `Ticket ${ticket.publicId} was read by client`,
+            text: `${req.user.name} opened and read ticket ${ticket.publicId}.\n\nOpen it: ${appUrl(`/admin/tickets/${ticket.publicId}`)}`,
+            html: `<p>${req.user.name} opened and read ticket <strong>${ticket.publicId}</strong>.</p><p><a href="${appUrl(`/admin/tickets/${ticket.publicId}`)}">Open ticket</a></p>`,
+          }),
+        ),
+      )
+    }
+    res.json(ticket)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export async function addMessage(req, res, next) {
   try {
     const ticket = await Ticket.findById(req.params.id).populate('user', 'email name')

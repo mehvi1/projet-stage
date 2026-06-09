@@ -61,6 +61,8 @@ export const useTicketStore = create(
           client: payload.client,
           adminReadAt: null,
           adminReadBy: null,
+          clientReadAt: null,
+          clientReadBy: null,
           history: [{ date: new Date().toISOString(), label: 'Ticket created', actor: 'Client' }],
           notes: [],
           messages: [{ body: payload.description, actor: 'Client', actorRole: 'client', createdAt: new Date().toISOString() }],
@@ -124,6 +126,38 @@ export const useTicketStore = create(
                   date: new Date().toISOString(),
                   label: 'Seen by support',
                   actor: adminName,
+                },
+              ],
+            }
+            return updatedTicket
+          }),
+        }))
+        return updatedTicket
+      },
+      markTicketReadByClient: async (ticketId, clientName) => {
+        try {
+          const id = apiTicketId(ticketId, get().tickets)
+          const { data } = await api.post(`/tickets/${id}/client-read`)
+          const ticket = normalizeTicket(data)
+          set((state) => ({ tickets: state.tickets.map((item) => (item.id === ticket.id ? ticket : item)) }))
+          return ticket
+        } catch (error) {
+          if (error.response) throw new Error(apiMessage(error, 'Unable to mark ticket as read.'), { cause: error })
+        }
+        let updatedTicket
+        set((state) => ({
+          tickets: state.tickets.map((ticket) => {
+            if (ticket.id !== ticketId || ticket.clientReadAt) return ticket
+            updatedTicket = {
+              ...ticket,
+              clientReadAt: new Date().toISOString(),
+              clientReadBy: clientName,
+              history: [
+                ...ticket.history,
+                {
+                  date: new Date().toISOString(),
+                  label: 'Seen by client',
+                  actor: clientName,
                 },
               ],
             }
