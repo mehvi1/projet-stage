@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { users } from '../data/seedData'
-import { api, apiMessage } from '../services/api'
+import { api, apiMessage, localDemoEnabled } from '../services/api'
 
 function mergeDefaultUsers(savedUsers = []) {
   const defaultIds = new Set(users.map((user) => user.id))
@@ -26,6 +26,7 @@ export const useAuthStore = create(
           return data.user
         } catch (error) {
           if (error.response) throw new Error(apiMessage(error, 'Invalid email or password.'), { cause: error })
+          if (!localDemoEnabled()) throw new Error('Server unavailable. Start the backend API to use synchronized accounts.', { cause: error })
         }
         const accounts = mergeDefaultUsers(get().users)
         if (accounts.length !== get().users.length) {
@@ -50,6 +51,7 @@ export const useAuthStore = create(
           return data.user
         } catch (error) {
           if (error.response) throw new Error(apiMessage(error, 'Registration failed.'), { cause: error })
+          if (!localDemoEnabled()) throw new Error('Server unavailable. Start the backend API to create synchronized accounts.', { cause: error })
         }
         const exists = get().users.some((user) => user.email.toLowerCase() === email.toLowerCase())
         if (exists) {
@@ -83,6 +85,7 @@ export const useAuthStore = create(
           return data
         } catch (error) {
           if (error.response) throw new Error(apiMessage(error, 'Profile update failed.'), { cause: error })
+          if (!localDemoEnabled()) throw new Error('Server unavailable. Start the backend API to synchronize profile changes.', { cause: error })
         }
 
         const normalizedEmail = updates.email?.trim().toLowerCase()

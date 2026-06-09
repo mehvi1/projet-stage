@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { tickets } from '../data/seedData'
-import { api, apiMessage } from '../services/api'
+import { api, apiMessage, localDemoEnabled } from '../services/api'
 import { nextTicketNumber, sortTicketsByNumber } from '../utils/tickets'
 
 function normalizeTicket(ticket) {
@@ -36,6 +36,7 @@ export const useTicketStore = create(
           return normalized
         } catch (error) {
           if (error.response) throw new Error(apiMessage(error, 'Unable to load tickets.'), { cause: error })
+          if (!localDemoEnabled()) throw new Error('Server unavailable. Tickets cannot synchronize without the backend API.', { cause: error })
           return get().tickets
         }
       },
@@ -47,6 +48,7 @@ export const useTicketStore = create(
           return ticket
         } catch (error) {
           if (error.response) throw new Error(apiMessage(error, 'Unable to create ticket.'), { cause: error })
+          if (!localDemoEnabled()) throw new Error('Server unavailable. Start the backend API before creating synchronized tickets.', { cause: error })
         }
         const id = nextTicketNumber(get().tickets)
         const ticket = {
@@ -80,6 +82,7 @@ export const useTicketStore = create(
           return ticket
         } catch (error) {
           if (error.response) throw new Error(apiMessage(error, 'Unable to update status.'), { cause: error })
+          if (!localDemoEnabled()) throw new Error('Server unavailable. Status changes cannot synchronize without the backend API.', { cause: error })
         }
         set((state) => ({
           tickets: state.tickets.map((ticket) =>
@@ -110,6 +113,7 @@ export const useTicketStore = create(
           return ticket
         } catch (error) {
           if (error.response) throw new Error(apiMessage(error, 'Unable to mark ticket as seen.'), { cause: error })
+          if (!localDemoEnabled()) throw new Error('Server unavailable. Ticket read status cannot synchronize without the backend API.', { cause: error })
         }
         let updatedTicket
         set((state) => ({
@@ -143,6 +147,7 @@ export const useTicketStore = create(
           return ticket
         } catch (error) {
           if (error.response) throw new Error(apiMessage(error, 'Unable to mark ticket as read.'), { cause: error })
+          if (!localDemoEnabled()) throw new Error('Server unavailable. Ticket read status cannot synchronize without the backend API.', { cause: error })
         }
         let updatedTicket
         set((state) => ({
@@ -175,6 +180,7 @@ export const useTicketStore = create(
           return ticket
         } catch (error) {
           if (error.response) throw new Error(apiMessage(error, 'Unable to add note.'), { cause: error })
+          if (!localDemoEnabled()) throw new Error('Server unavailable. Notes cannot synchronize without the backend API.', { cause: error })
         }
         set((state) => ({
           tickets: state.tickets.map((ticket) =>
@@ -192,6 +198,7 @@ export const useTicketStore = create(
           return ticket
         } catch (error) {
           if (error.response) throw new Error(apiMessage(error, 'Unable to add message.'), { cause: error })
+          if (!localDemoEnabled()) throw new Error('Server unavailable. Messages cannot synchronize without the backend API.', { cause: error })
         }
         const message = { body, actor: user.name, actorRole: user.role, createdAt: new Date().toISOString() }
         set((state) => ({
@@ -216,6 +223,7 @@ export const useTicketStore = create(
           return ticket
         } catch (error) {
           if (error.response) throw new Error(apiMessage(error, 'Unable to add attachment.'), { cause: error })
+          if (!localDemoEnabled()) throw new Error('Server unavailable. Attachments cannot synchronize without the backend API.', { cause: error })
         }
         const nextAttachment = { ...attachment, uploadedBy: user.name, uploadedAt: new Date().toISOString() }
         set((state) => ({

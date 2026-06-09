@@ -29,10 +29,10 @@ export function AdminDashboard() {
   const resolved = tickets.filter((ticket) => ticket.status === 'Resolved').length
   const progress = tickets.filter((ticket) => ticket.status === 'In Progress').length
   const stats = [
-    { label: 'Total tickets', value: total, icon: Ticket },
-    { label: 'Pending tickets', value: pending, icon: Clock3 },
-    { label: 'Resolved tickets', value: resolved, icon: CheckCircle2 },
-    { label: 'Recent activities', value: tickets.reduce((sum, ticket) => sum + ticket.history.length, 0), icon: Activity },
+    { label: 'Total tickets', value: total, icon: Ticket, to: '/admin/tickets' },
+    { label: 'Pending tickets', value: pending, icon: Clock3, to: '/admin/tickets?status=Pending' },
+    { label: 'Resolved tickets', value: resolved, icon: CheckCircle2, to: '/admin/tickets?status=Resolved' },
+    { label: 'Recent activities', value: tickets.reduce((sum, ticket) => sum + ticket.history.length, 0), icon: Activity, to: '/admin/tickets?sort=recent' },
   ]
 
   return (
@@ -43,8 +43,12 @@ export function AdminDashboard() {
         description="Monitor incoming support demand, review service activity, and keep client tickets moving."
       />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map(({ label, value, icon: Icon }, index) => (
+        {stats.map(({ label, value, icon: Icon, to }, index) => (
           <motion.div key={label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
+            <Link
+              to={to}
+              className="block rounded-lg outline-none transition hover:-translate-y-0.5 focus-visible:ring-4 focus-visible:ring-[#7fd22b]/25"
+            >
             <Card>
               <div className="flex items-center justify-between">
                 <div>
@@ -56,6 +60,7 @@ export function AdminDashboard() {
                 </div>
               </div>
             </Card>
+            </Link>
           </motion.div>
         ))}
       </div>

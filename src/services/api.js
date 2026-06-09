@@ -17,6 +17,10 @@ export function apiMessage(error, fallback = 'The server is not available.') {
   return error?.response?.data?.message ?? error?.message ?? fallback
 }
 
+export function localDemoEnabled() {
+  return import.meta.env.VITE_ENABLE_LOCAL_DEMO === 'true' || localStorage.getItem('pbxcom-token')?.startsWith('mock-jwt-')
+}
+
 export async function fileToAttachment(file) {
   const dataUrl = await new Promise((resolve, reject) => {
     const reader = new FileReader()

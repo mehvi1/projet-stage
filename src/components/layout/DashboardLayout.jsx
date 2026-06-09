@@ -23,6 +23,7 @@ import { useAuthStore } from '../../store/authStore'
 import { useTranslation } from '../../store/languageStore'
 import { useNotificationStore } from '../../store/notificationStore'
 import { useTicketStore } from '../../store/ticketStore'
+import { useToastStore } from '../../store/toastStore'
 import { formatDate, initials } from '../../utils/formatters'
 
 const adminNav = [
@@ -80,7 +81,7 @@ function NotificationCenter({ area, user }) {
 
   const openCenter = () => {
     setOpen((value) => !value)
-    if (!open && unreadCount) markReadForUser(user.id)
+    if (!open && unreadCount) markReadForUser(user.id).catch(() => {})
   }
 
   const openTicket = (ticketId) => {
@@ -230,11 +231,14 @@ export function DashboardLayout({ area }) {
   const user = useAuthStore((state) => state.user)
   const logout = useAuthStore((state) => state.logout)
   const loadTickets = useTicketStore((state) => state.loadTickets)
+  const loadNotifications = useNotificationStore((state) => state.loadNotifications)
+  const pushToast = useToastStore((state) => state.pushToast)
   const navigate = useNavigate()
 
   useEffect(() => {
-    loadTickets().catch(() => {})
-  }, [loadTickets])
+    loadTickets().catch((error) => pushToast(error.message, 'error'))
+    loadNotifications().catch((error) => pushToast(error.message, 'error'))
+  }, [loadNotifications, loadTickets, pushToast])
 
   const handleLogout = () => {
     logout()

@@ -27,8 +27,9 @@ Real emails are sent only by the backend. The frontend can show local website no
 
 - A valid `MONGO_URI`, because the API does not start until MongoDB connects.
 - Valid SMTP values: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, and `EMAIL_FROM`.
+- For Gmail, set `EMAIL_PROVIDER=gmail`, put the Gmail address in `SMTP_USER`, and use a Gmail app password in `SMTP_PASS`.
 - `CLIENT_URL` matching the frontend URL, so email links open the right app.
 
 When SMTP is missing or rejected, ticket actions still save successfully and the API returns an `emailNotification` status explaining whether email was sent, skipped, or failed.
 
-The frontend currently uses a persisted local mock store so the app is immediately usable without a database. If the backend is unavailable, tickets are saved locally and real email cannot be sent.
+The frontend can still run a local demo only when `VITE_ENABLE_LOCAL_DEMO=true`. For real multi-computer work, keep the backend API and MongoDB running so tickets, status changes, files, and notifications are shared through the database.
