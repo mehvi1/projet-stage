@@ -14,6 +14,7 @@ import { useTranslation } from '../../store/languageStore'
 import { useNotificationStore } from '../../store/notificationStore'
 import { useTicketStore } from '../../store/ticketStore'
 import { useToastStore } from '../../store/toastStore'
+import { emailDeliveryMessage } from '../../utils/emailDelivery'
 
 const initialForm = {
   nom: '',
@@ -116,7 +117,8 @@ export function CreateTicket() {
         })
       setForm({ ...form, problemDescription: '' })
       setAttachments([])
-      pushToast(`${t.sentInfo} ${t.reference} ${ticket.id}. Admin email notification sent.`)
+      const delivery = emailDeliveryMessage(ticket, 'Ticket saved.')
+      pushToast(`${t.sentInfo} ${t.reference} ${ticket.id}. ${delivery.message}`, delivery.tone)
       navigate('/client')
     } catch (error) {
       pushToast(error.message, 'error')

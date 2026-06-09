@@ -12,6 +12,7 @@ import { useAuthStore } from '../../store/authStore'
 import { useNotificationStore } from '../../store/notificationStore'
 import { useTicketStore } from '../../store/ticketStore'
 import { useToastStore } from '../../store/toastStore'
+import { emailDeliveryMessage } from '../../utils/emailDelivery'
 import { formatDate } from '../../utils/formatters'
 import { NotFound } from '../NotFound'
 
@@ -53,9 +54,10 @@ export function TicketDetail() {
   const sendMessage = async () => {
     if (!message.trim()) return
     try {
-      await addMessage(ticket.id, message.trim(), user)
+      const updatedTicket = await addMessage(ticket.id, message.trim(), user)
       setMessage('')
-      pushToast('Message sent.')
+      const delivery = emailDeliveryMessage(updatedTicket, 'Message saved.')
+      pushToast(delivery.message, delivery.tone)
     } catch (error) {
       pushToast(error.message, 'error')
     }

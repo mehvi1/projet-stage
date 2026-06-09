@@ -26,14 +26,30 @@ export async function sendEmail({ to, subject, text, html }) {
     return { skipped: true, reason: 'SMTP not configured' }
   }
 
-  const transporter = createTransporter()
-  return transporter.sendMail({
-    from,
-    to,
-    subject,
-    text,
-    html,
-  })
+  try {
+    const transporter = createTransporter()
+    const info = await transporter.sendMail({
+      from,
+      to,
+      subject,
+      text,
+      html,
+    })
+    return { sent: true, messageId: info.messageId, accepted: info.accepted, rejected: info.rejected }
+  } catch (error) {
+    console.error('Email failed:', { to, subject, error: error.message })
+    return { failed: true, reason: error.message }
+  }
+}
+
+export async function sendEmails(messages) {
+  const results = await Promise.all(messages.map((message) => sendEmail(message)))
+  return {
+    sent: results.filter((result) => result.sent).length,
+    skipped: results.filter((result) => result.skipped).length,
+    failed: results.filter((result) => result.failed).length,
+    results,
+  }
 }
 
 export function appUrl(path = '') {

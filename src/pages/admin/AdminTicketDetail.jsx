@@ -15,6 +15,7 @@ import { useAuthStore } from '../../store/authStore'
 import { useNotificationStore } from '../../store/notificationStore'
 import { useTicketStore } from '../../store/ticketStore'
 import { useToastStore } from '../../store/toastStore'
+import { emailDeliveryMessage } from '../../utils/emailDelivery'
 import { formatDate } from '../../utils/formatters'
 import { NotFound } from '../NotFound'
 
@@ -45,7 +46,8 @@ export function AdminTicketDetail() {
           subject: `Your ticket ${ticket.id} was read`,
           message: `${user.name} opened and read your ticket about: ${ticket.description}`,
         })
-        pushToast(`Client email notification sent to ${ticket.client.mail}.`)
+        const delivery = emailDeliveryMessage(updatedTicket, `Client notified at ${ticket.client.mail}.`)
+        pushToast(delivery.message, delivery.tone)
       })
       .catch((error) => pushToast(error.message, 'error'))
   }, [markTicketSeenByAdmin, pushToast, sendEmailNotification, ticket, user.name])
@@ -54,16 +56,21 @@ export function AdminTicketDetail() {
 
   const handleStatus = async (status) => {
     if (!window.confirm(`Change ticket status to ${status}?`)) return
-    await updateStatus(ticket.id, status)
-    sendEmailNotification({
-      recipientId: ticket.userId,
-      recipientEmail: ticket.client.mail,
-      recipientRole: 'client',
-      ticketId: ticket.id,
-      subject: `Ticket ${ticket.id} status updated`,
-      message: `${user.name} changed your ticket status to ${status}.`,
-    })
-    pushToast(`Status updated to ${status}. Client email notification sent.`)
+    try {
+      const updatedTicket = await updateStatus(ticket.id, status)
+      sendEmailNotification({
+        recipientId: ticket.userId,
+        recipientEmail: ticket.client.mail,
+        recipientRole: 'client',
+        ticketId: ticket.id,
+        subject: `Ticket ${ticket.id} status updated`,
+        message: `${user.name} changed your ticket status to ${status}.`,
+      })
+      const delivery = emailDeliveryMessage(updatedTicket, `Status updated to ${status}.`)
+      pushToast(`Status updated to ${status}. ${delivery.message}`, delivery.tone)
+    } catch (error) {
+      pushToast(error.message, 'error')
+    }
   }
 
   const saveNote = async () => {
@@ -75,17 +82,22 @@ export function AdminTicketDetail() {
 
   const sendMessage = async () => {
     if (!message.trim()) return
-    await addMessage(ticket.id, message.trim(), user)
-    setMessage('')
-    sendEmailNotification({
-      recipientId: ticket.userId,
-      recipientEmail: ticket.client.mail,
-      recipientRole: 'client',
-      ticketId: ticket.id,
-      subject: `New reply on ticket ${ticket.id}`,
-      message: `${user.name} replied to your ticket.`,
-    })
-    pushToast('Reply sent to client.')
+    try {
+      const updatedTicket = await addMessage(ticket.id, message.trim(), user)
+      setMessage('')
+      sendEmailNotification({
+        recipientId: ticket.userId,
+        recipientEmail: ticket.client.mail,
+        recipientRole: 'client',
+        ticketId: ticket.id,
+        subject: `New reply on ticket ${ticket.id}`,
+        message: `${user.name} replied to your ticket.`,
+      })
+      const delivery = emailDeliveryMessage(updatedTicket, 'Reply saved.')
+      pushToast(delivery.message, delivery.tone)
+    } catch (error) {
+      pushToast(error.message, 'error')
+    }
   }
 
   const uploadAttachment = async (event) => {
