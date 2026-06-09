@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { users } from '../data/seedData'
-import { api, apiMessage, localDemoEnabled } from '../services/api'
+import { api, apiMessage, apiSyncEnabled, localDemoEnabled } from '../services/api'
 
 function mergeDefaultUsers(savedUsers = []) {
   const defaultIds = new Set(users.map((user) => user.id))
@@ -19,14 +19,16 @@ export const useAuthStore = create(
       user: null,
       token: null,
       login: async ({ email, password }) => {
-        try {
-          const { data } = await api.post('/auth/login', { email, password })
-          localStorage.setItem('pbxcom-token', data.token)
-          set({ user: data.user, token: data.token })
-          return data.user
-        } catch (error) {
-          if (error.response) throw new Error(apiMessage(error, 'Invalid email or password.'), { cause: error })
-          if (!localDemoEnabled()) throw new Error('Server unavailable. Start the backend API to use synchronized accounts.', { cause: error })
+        if (apiSyncEnabled()) {
+          try {
+            const { data } = await api.post('/auth/login', { email, password })
+            localStorage.setItem('pbxcom-token', data.token)
+            set({ user: data.user, token: data.token })
+            return data.user
+          } catch (error) {
+            if (error.response) throw new Error(apiMessage(error, 'Invalid email or password.'), { cause: error })
+            if (!localDemoEnabled()) throw new Error('Server unavailable. Start the backend API to use synchronized accounts.', { cause: error })
+          }
         }
         const accounts = mergeDefaultUsers(get().users)
         if (accounts.length !== get().users.length) {
@@ -44,14 +46,16 @@ export const useAuthStore = create(
         return found
       },
       register: async ({ name, email, password, company }) => {
-        try {
-          const { data } = await api.post('/auth/register', { name, email, password, company })
-          localStorage.setItem('pbxcom-token', data.token)
-          set({ user: data.user, token: data.token })
-          return data.user
-        } catch (error) {
-          if (error.response) throw new Error(apiMessage(error, 'Registration failed.'), { cause: error })
-          if (!localDemoEnabled()) throw new Error('Server unavailable. Start the backend API to create synchronized accounts.', { cause: error })
+        if (apiSyncEnabled()) {
+          try {
+            const { data } = await api.post('/auth/register', { name, email, password, company })
+            localStorage.setItem('pbxcom-token', data.token)
+            set({ user: data.user, token: data.token })
+            return data.user
+          } catch (error) {
+            if (error.response) throw new Error(apiMessage(error, 'Registration failed.'), { cause: error })
+            if (!localDemoEnabled()) throw new Error('Server unavailable. Start the backend API to create synchronized accounts.', { cause: error })
+          }
         }
         const exists = get().users.some((user) => user.email.toLowerCase() === email.toLowerCase())
         if (exists) {
@@ -76,16 +80,18 @@ export const useAuthStore = create(
           throw new Error('You must be logged in.')
         }
 
-        try {
-          const { data } = await api.patch('/auth/me', updates)
-          set((state) => ({
-            user: data,
-            users: state.users.map((user) => (user.id === currentUser.id ? { ...user, ...data } : user)),
-          }))
-          return data
-        } catch (error) {
-          if (error.response) throw new Error(apiMessage(error, 'Profile update failed.'), { cause: error })
-          if (!localDemoEnabled()) throw new Error('Server unavailable. Start the backend API to synchronize profile changes.', { cause: error })
+        if (apiSyncEnabled()) {
+          try {
+            const { data } = await api.patch('/auth/me', updates)
+            set((state) => ({
+              user: data,
+              users: state.users.map((user) => (user.id === currentUser.id ? { ...user, ...data } : user)),
+            }))
+            return data
+          } catch (error) {
+            if (error.response) throw new Error(apiMessage(error, 'Profile update failed.'), { cause: error })
+            if (!localDemoEnabled()) throw new Error('Server unavailable. Start the backend API to synchronize profile changes.', { cause: error })
+          }
         }
 
         const normalizedEmail = updates.email?.trim().toLowerCase()
@@ -111,13 +117,15 @@ export const useAuthStore = create(
         return nextUser
       },
       forgotPassword: async (email) => {
-        try {
-          const { data } = await api.post('/auth/forgot-password', { email })
-          return data.message
-        } catch (error) {
-          if (error.response) throw new Error(apiMessage(error, 'Unable to send reset link.'), { cause: error })
-          return 'Password reset instructions sent if the account exists.'
+        if (apiSyncEnabled()) {
+          try {
+            const { data } = await api.post('/auth/forgot-password', { email })
+            return data.message
+          } catch (error) {
+            if (error.response) throw new Error(apiMessage(error, 'Unable to send reset link.'), { cause: error })
+          }
         }
+        return 'Password reset instructions sent if the account exists.'
       },
       resetDemoData: () => {
         localStorage.removeItem('pbxcom-auth')

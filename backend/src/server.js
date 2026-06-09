@@ -4,6 +4,7 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 import dotenv from 'dotenv'
 import { connectDatabase } from './config/database.js'
+import { allowedOrigins, validateEnv } from './config/env.js'
 import { authRoutes } from './routes/auth.routes.js'
 import { employeeRoutes } from './routes/employee.routes.js'
 import { notificationRoutes } from './routes/notification.routes.js'
@@ -11,11 +12,19 @@ import { ticketRoutes } from './routes/ticket.routes.js'
 import { errorHandler } from './middleware/errorHandler.js'
 
 dotenv.config()
+validateEnv()
 
 const app = express()
+const origins = allowedOrigins()
 
 app.use(helmet())
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }))
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || origins.includes(origin)) return callback(null, true)
+    return callback(new Error(`Origin not allowed by CORS: ${origin}`))
+  },
+  credentials: true,
+}))
 app.use(express.json({ limit: '1mb' }))
 app.use(morgan('dev'))
 

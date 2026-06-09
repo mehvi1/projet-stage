@@ -2,11 +2,13 @@ import bcrypt from 'bcryptjs'
 import dotenv from 'dotenv'
 import mongoose from 'mongoose'
 import { connectDatabase } from '../config/database.js'
+import { validateEnv } from '../config/env.js'
 import { User } from '../models/User.js'
 
 dotenv.config()
+validateEnv()
 
-const requiredEnv = ['MONGO_URI', 'ADMIN_NAME', 'ADMIN_EMAIL', 'ADMIN_PASSWORD']
+const requiredEnv = ['ADMIN_NAME', 'ADMIN_EMAIL', 'ADMIN_PASSWORD']
 const missingEnv = requiredEnv.filter((key) => !process.env[key])
 
 if (missingEnv.length) {
