@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
-import { allowedOrigins } from './env.js'
+import { allowedOrigins, validateEnv } from './env.js'
 
 const originalEnv = { ...process.env }
 
@@ -29,5 +29,42 @@ describe('allowedOrigins', () => {
       'https://admin.example.com',
       'http://localhost:5173',
     ])
+  })
+})
+
+describe('validateEnv', () => {
+  function setValidEnv(overrides = {}) {
+    process.env.MONGO_URI = 'mongodb+srv://real_user:real_password@example.mongodb.net/pbxcom'
+    process.env.JWT_SECRET = 'a'.repeat(32)
+    process.env.CLIENT_URL = 'http://localhost:5173'
+    Object.assign(process.env, overrides)
+  }
+
+  it('explains MongoDB angle bracket placeholders', () => {
+    setValidEnv({
+      MONGO_URI: 'mongodb+srv://<db_username>:<password>@example.mongodb.net/pbxcom',
+    })
+
+    assert.throws(
+      () => validateEnv(),
+      /MONGO_URI still contains placeholder angle brackets/,
+    )
+  })
+
+  it('rejects placeholder database usernames even without angle brackets', () => {
+    setValidEnv({
+      MONGO_URI: 'mongodb+srv://db_username:real_password@example.mongodb.net/pbxcom',
+    })
+
+    assert.throws(
+      () => validateEnv(),
+      /real MongoDB Atlas database username/,
+    )
+  })
+
+  it('accepts a complete MongoDB connection string', () => {
+    setValidEnv()
+
+    assert.doesNotThrow(() => validateEnv())
   })
 })

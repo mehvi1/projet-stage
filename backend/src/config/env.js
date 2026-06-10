@@ -4,13 +4,40 @@ function isPlaceholder(value = '') {
   return /YOUR_|replace-with|<|>/.test(value)
 }
 
+function validateMongoUri(uri = '') {
+  if (/[<>]/.test(uri)) {
+    throw new Error('MONGO_URI still contains placeholder angle brackets. Replace <db_username> and remove < > around the password.')
+  }
+
+  let parsed
+  try {
+    parsed = new URL(uri)
+  } catch {
+    throw new Error('MONGO_URI must be a valid MongoDB connection string.')
+  }
+
+  if (!['mongodb:', 'mongodb+srv:'].includes(parsed.protocol)) {
+    throw new Error('MONGO_URI must start with mongodb:// or mongodb+srv://.')
+  }
+
+  if (!parsed.username || ['db_username', 'your_db_user', 'your_db_username'].includes(parsed.username.toLowerCase())) {
+    throw new Error('MONGO_URI must contain the real MongoDB Atlas database username.')
+  }
+
+  if (!parsed.password) {
+    throw new Error('MONGO_URI must contain the real MongoDB Atlas database password.')
+  }
+}
+
 export function validateEnv() {
   const missing = requiredEnv.filter((key) => !process.env[key]?.trim())
   if (missing.length) {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`)
   }
 
-  const placeholders = requiredEnv.filter((key) => isPlaceholder(process.env[key]))
+  validateMongoUri(process.env.MONGO_URI)
+
+  const placeholders = requiredEnv.filter((key) => key !== 'MONGO_URI' && isPlaceholder(process.env[key]))
   if (placeholders.length) {
     throw new Error(`Replace placeholder values before starting the API: ${placeholders.join(', ')}`)
   }
