@@ -1,29 +1,37 @@
 import nodemailer from 'nodemailer'
 
-function smtpReady() {
-  return Boolean(process.env.SMTP_HOST && process.env.SMTP_PORT && process.env.SMTP_USER && process.env.SMTP_PASS)
+export function emailConfigReady(env = process.env) {
+  if (env.EMAIL_PROVIDER === 'gmail') {
+    return Boolean(env.SMTP_USER && env.SMTP_PASS)
+  }
+
+  return Boolean(env.SMTP_HOST && env.SMTP_PORT && env.SMTP_USER && env.SMTP_PASS)
+}
+
+export function createTransportOptions(env = process.env) {
+  if (env.EMAIL_PROVIDER === 'gmail') {
+    return {
+      service: 'gmail',
+      auth: {
+        user: env.SMTP_USER,
+        pass: env.SMTP_PASS,
+      },
+    }
+  }
+
+  return {
+    host: env.SMTP_HOST,
+    port: Number(env.SMTP_PORT),
+    secure: env.SMTP_SECURE === 'true',
+    auth: {
+      user: env.SMTP_USER,
+      pass: env.SMTP_PASS,
+    },
+  }
 }
 
 function createTransporter() {
-  if (process.env.EMAIL_PROVIDER === 'gmail') {
-    return nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    })
-  }
-
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  })
+  return nodemailer.createTransport(createTransportOptions())
 }
 
 export async function sendEmail({ to, subject, text, html }) {
@@ -31,7 +39,7 @@ export async function sendEmail({ to, subject, text, html }) {
 
   const from = process.env.EMAIL_FROM || process.env.SMTP_USER
 
-  if (!smtpReady()) {
+  if (!emailConfigReady()) {
     console.log('Email not sent because SMTP is not configured:', { to, subject, text })
     return { skipped: true, reason: 'SMTP not configured' }
   }

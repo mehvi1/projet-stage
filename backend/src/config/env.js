@@ -21,7 +21,25 @@ export function validateEnv() {
 }
 
 export function allowedOrigins() {
-  return [process.env.CLIENT_URL, ...(process.env.CORS_ORIGINS?.split(',') ?? [])]
+  const configuredOrigins = [process.env.CLIENT_URL, ...(process.env.CORS_ORIGINS?.split(',') ?? [])]
     .map((origin) => origin?.trim())
     .filter(Boolean)
+  const origins = new Set(configuredOrigins)
+
+  for (const origin of configuredOrigins) {
+    try {
+      const url = new URL(origin)
+      if (url.hostname === 'localhost') {
+        url.hostname = '127.0.0.1'
+        origins.add(url.toString().replace(/\/$/, ''))
+      } else if (url.hostname === '127.0.0.1') {
+        url.hostname = 'localhost'
+        origins.add(url.toString().replace(/\/$/, ''))
+      }
+    } catch {
+      // Ignore invalid CORS entries here; Express will reject unmatched origins.
+    }
+  }
+
+  return [...origins]
 }

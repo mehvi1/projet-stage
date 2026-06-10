@@ -11,6 +11,16 @@ function withEmailNotification(ticket, emailNotification) {
   return { ...ticket.toObject(), emailNotification }
 }
 
+function escapeHtml(value = '') {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[character])
+}
+
 async function nextPublicId() {
   const latestTicket = await Ticket.findOne().sort({ publicId: -1 }).select('publicId')
   const latestNumber = latestTicket ? Number.parseInt(latestTicket.publicId, 10) || 0 : 0
@@ -30,12 +40,14 @@ export async function createTicket(req, res, next) {
     const supportUsers = await User.find({ role: { $in: ['employee', 'admin'] }, active: true }).select('email name role')
     const subject = `New PBxcom ticket ${ticket.publicId}`
     const message = `${req.user.name} created a new ticket for ${ticket.client.societes}.`
+    const descriptionHtml = escapeHtml(ticket.description)
+    const creatorHtml = escapeHtml(req.user.name)
     const emailNotification = await sendEmails(
       supportUsers.map((supportUser) => ({
         to: supportUser.email,
         subject,
         text: `${req.user.name} created ticket ${ticket.publicId}: ${ticket.description}\n\nOpen it: ${appUrl(`/admin/tickets/${ticket.publicId}`)}`,
-        html: `<p>${req.user.name} created ticket <strong>${ticket.publicId}</strong>.</p><p>${ticket.description}</p><p><a href="${appUrl(`/admin/tickets/${ticket.publicId}`)}">Open ticket</a></p>`,
+        html: `<p>${creatorHtml} created ticket <strong>${ticket.publicId}</strong>.</p><p>${descriptionHtml}</p><p><a href="${appUrl(`/admin/tickets/${ticket.publicId}`)}">Open ticket</a></p>`,
       })),
     )
     await createNotifications(
@@ -119,11 +131,12 @@ export async function markTicketSeen(req, res, next) {
       await ticket.save()
       const subject = `Ticket ${ticket.publicId} was read`
       const message = `${req.user.name} opened and read your ticket.`
+      const readerHtml = escapeHtml(req.user.name)
       emailNotification = await sendEmail({
         to: ticket.client.mail || ticket.user?.email,
         subject,
         text: `${req.user.name} opened and read your ticket ${ticket.publicId}.\n\nOpen it: ${appUrl(`/client/tickets/${ticket.publicId}`)}`,
-        html: `<p>${req.user.name} opened and read your ticket <strong>${ticket.publicId}</strong>.</p><p><a href="${appUrl(`/client/tickets/${ticket.publicId}`)}">Open ticket</a></p>`,
+        html: `<p>${readerHtml} opened and read your ticket <strong>${ticket.publicId}</strong>.</p><p><a href="${appUrl(`/client/tickets/${ticket.publicId}`)}">Open ticket</a></p>`,
       })
       await createNotification({
         recipient: ticket.user,
@@ -156,12 +169,13 @@ export async function markTicketReadByClient(req, res, next) {
       const supportUsers = await User.find({ role: { $in: ['employee', 'admin'] }, active: true }).select('email role')
       const subject = `Ticket ${ticket.publicId} was read by client`
       const message = `${req.user.name} opened and read ticket ${ticket.publicId}.`
+      const readerHtml = escapeHtml(req.user.name)
       emailNotification = await sendEmails(
         supportUsers.map((supportUser) => ({
           to: supportUser.email,
           subject,
           text: `${req.user.name} opened and read ticket ${ticket.publicId}.\n\nOpen it: ${appUrl(`/admin/tickets/${ticket.publicId}`)}`,
-          html: `<p>${req.user.name} opened and read ticket <strong>${ticket.publicId}</strong>.</p><p><a href="${appUrl(`/admin/tickets/${ticket.publicId}`)}">Open ticket</a></p>`,
+          html: `<p>${readerHtml} opened and read ticket <strong>${ticket.publicId}</strong>.</p><p><a href="${appUrl(`/admin/tickets/${ticket.publicId}`)}">Open ticket</a></p>`,
         })),
       )
       await createNotifications(
@@ -199,12 +213,14 @@ export async function addMessage(req, res, next) {
       : [ticket.client.mail || ticket.user?.email]
     const subject = `New message on ticket ${ticket.publicId}`
     const message = `${req.user.name} added a message on ticket ${ticket.publicId}.`
+    const actorHtml = escapeHtml(req.user.name)
+    const bodyHtml = escapeHtml(req.body.body)
     const emailNotification = await sendEmails(
       recipients.filter(Boolean).map((recipient) => ({
         to: recipient,
         subject,
         text: `${req.user.name} added a message:\n\n${req.body.body}\n\nOpen it: ${appUrl(req.user.role === 'client' ? `/admin/tickets/${ticket.publicId}` : `/client/tickets/${ticket.publicId}`)}`,
-        html: `<p>${req.user.name} added a message on ticket <strong>${ticket.publicId}</strong>.</p><p>${req.body.body}</p><p><a href="${appUrl(req.user.role === 'client' ? `/admin/tickets/${ticket.publicId}` : `/client/tickets/${ticket.publicId}`)}">Open ticket</a></p>`,
+        html: `<p>${actorHtml} added a message on ticket <strong>${ticket.publicId}</strong>.</p><p>${bodyHtml}</p><p><a href="${appUrl(req.user.role === 'client' ? `/admin/tickets/${ticket.publicId}` : `/client/tickets/${ticket.publicId}`)}">Open ticket</a></p>`,
       })),
     )
     if (req.user.role === 'client') {
